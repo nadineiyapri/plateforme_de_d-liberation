@@ -1,8 +1,5 @@
 # rouge    
 
-#members
-#description  
-test 
 ## members  
 Do Cécilia.  
 OuldLhadj Narimane.  
