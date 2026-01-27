@@ -1,8 +1,8 @@
 # rouge
 
 #members
-Do Cécilia.
-OuldLhadj Narimane.
+Do Cécilia. 
+OuldLhadj Narimane. \n
 Tuyishime Cedrick.
 Sekher Nadine.
 Menasria AbdelDjallil.
