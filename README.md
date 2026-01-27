@@ -1,7 +1,7 @@
 # rouge
 
 #members
-Do Cécilia. 
+Do Cécilia.  
 OuldLhadj Narimane.  
 Tuyishime Cedrick.  
 Sekher Nadine.  
