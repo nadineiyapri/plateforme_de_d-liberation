@@ -1,11 +1,11 @@
 # rouge
 
 #members
-Do Cécilia
-OuldLhadj Narimane
-Tuyishime Cedrick
-Sekher Nadine
-Menasria AbdelDjallil
+Do Cécilia.
+OuldLhadj Narimane.
+Tuyishime Cedrick.
+Sekher Nadine.
+Menasria AbdelDjallil.
 
 
 
