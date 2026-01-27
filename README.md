@@ -2,10 +2,10 @@
 
 #members
 Do Cécilia. 
-OuldLhadj Narimane. \n
-Tuyishime Cedrick.
-Sekher Nadine.
-Menasria AbdelDjallil.
+OuldLhadj Narimane.  
+Tuyishime Cedrick.  
+Sekher Nadine.  
+Menasria AbdelDjallil.  
 
 
 
