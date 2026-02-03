@@ -1,0 +1,62 @@
+
+
+<!DOCTYPE html>
+<html lang="fr">
+    
+<head>
+    <meta charset="utf-8">
+    
+    <title>U-Voice</title>
+</head>
+<style>
+    body{
+        background: repeating-linear-gradient(45deg,
+        #fff,
+      #ffbd3a 25px,
+      #4a7aff 25px,
+      #e05952 25px
+      );
+    }
+    .signup{
+        background-color: brown;
+        position: absolute;
+        top: 8px;
+        right: 16px;
+        font-size: 20px;
+    }
+    h1{
+        font-size: 100px;
+        position: absolute;
+        top: 10%;
+        width: 100%;
+        text-align: center;
+        color: brown;
+}
+h2{
+        font-size: 30px;
+        position: absolute;
+        top: 30%;
+        width: 100%;
+        text-align: center;
+        color: brown;
+}
+
+</style>
+<body>
+    <img src="{{ url_for('static', filename='photologo.png') }}" alt="Logo U-Voice" style="position:absolute; top:10px; left:10px; width:100px;">
+
+    <div style="text-align: center;"> 
+        <a href="/">Accueil</a>
+    </div>
+    <div class="signup">
+        <a href="{{ url_for('login') }}">
+            <button class="button">se connecter</button>
+        </a>
+        <a href="{{ url_for('signup') }}">
+        <button >s'inscrire</button>
+        </a>
+    </div>
+    <h1><strong>U-VOICE</strong></h1>
+    <h2>Make your voice matter &#128173;</h2>
+</body>
+</html>
