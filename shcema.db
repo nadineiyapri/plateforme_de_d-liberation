@@ -1,0 +1,35 @@
+
+DROP TABLE IF EXISTS admin;
+DROP TABLE IF EXISTS prof;
+DROP TABLE IF EXISTS etudiant;
+DROP TABLE IF EXISTS users;
+
+
+CREATE TABLE users (
+    iduser INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom TEXT NOT NULL,
+    prenom TEXT NOT NULL
+); 
+
+
+CREATE TABLE etudiant (
+    idetu INTEGER PRIMARY KEY,
+    filliere TEXT,
+    FOREIGN KEY (idetu) REFERENCES users(iduser) ON DELETE CASCADE
+);
+
+CREATE TABLE prof (
+    idprof INTEGER PRIMARY KEY,
+    module TEXT,
+    FOREIGN KEY (idprof) REFERENCES users(iduser) ON DELETE CASCADE
+);
+
+
+from flask_sqlalchemy import flask_sqlalchemy
+
+db=SQLALchemy()
+
+class User(db.Model):
+    __tablename__='users'
+    iduser
+
