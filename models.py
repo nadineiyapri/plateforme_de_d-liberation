@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///uvoice.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -18,9 +19,10 @@ class User(db.Model):
 class Theme(db.Model):
     __tablename__ = 'themes'
     id_theme = db.Column(db.Integer, primary_key=True)
-    nom_theme = db.Column(db.String(100), nullable=False)
+    nom_theme = db.Column(db.String(100), nullable=False, unique=True)
     id_admin = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
     admin = db.relationship('User')
+
 
 class Debat(db.Model):
     __tablename__ = 'debats'
@@ -41,7 +43,7 @@ class Argument(db.Model):
     __tablename__ = 'arguments'
     id_argument = db.Column(db.Integer, primary_key=True)
     texte = db.Column(db.Text, nullable=False)
-    type = db.Column(db.String(20), nullable=False)  # soutien / attaque
+    type_arg = db.Column(db.String(20), nullable=False)  # soutien / attaque
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
 
     id_debat = db.Column(db.Integer, db.ForeignKey('debats.id_debat'), nullable=False)
@@ -69,3 +71,4 @@ if __name__ == '__main__':
         
 
         print("Test complet terminé.")
+
