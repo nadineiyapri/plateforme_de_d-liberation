@@ -68,7 +68,8 @@ if __name__ == '__main__':
         db.session.add_all([admin, prof, etudiant])
         db.session.commit()
 
-        
+
 
         print("Test complet terminé.")
 
+ 
