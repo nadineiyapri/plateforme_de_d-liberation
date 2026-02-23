@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>UVoice - Accueil</title>
+</head>
+<body>
+
+<h1>Bonjour {{ user.prenom }} {{ user.nom }} ({{ user.role }})</h1>
+
+<hr>
+
+<h2>Que voulez-vous faire ?</h2>
+
+<!-- Créer un thème (admin seulement, mais on laisse le lien visible, le serveur gère l'erreur) -->
+<p><a href="/creer_theme">➕ Créer un thème</a></p>
+<p><a href="/creer_debat">➕ Créer un débat</a></p>
+
+<hr>
+
+<h2>Débats disponibles</h2>
+
+{% if debats %}
+    <ul>
+    {% for d in debats %}
+        <li>
+            <a href="/debat/{{ d.id_debat }}">{{ d.titre }}</a>
+            — <em>{{ d.statut }}</em>
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Aucun débat pour l'instant.</p>
+{% endif %}
+
+</body>
+</html>

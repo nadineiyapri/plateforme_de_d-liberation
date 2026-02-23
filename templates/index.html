@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>UVoice - Connexion</title>
+</head>
+<body>
+
+<h1>Bienvenue sur UVoice</h1>
+<p>Entrez vos informations pour continuer :</p>
+
+<form method="POST" action="/">
+    <label>Nom :</label><br>
+    <input type="text" name="nom" required><br><br>
+
+    <label>Prénom :</label><br>
+    <input type="text" name="prenom" required><br><br>
+
+    <label>Rôle :</label><br>
+    <select name="role">
+        <option value="etudiant">Étudiant</option>
+        <option value="prof">Professeur</option>
+        <option value="admin">Admin</option>
+    </select><br><br>
+
+    <button type="submit">Entrer</button>
+</form>
+
+</body>
+</html>

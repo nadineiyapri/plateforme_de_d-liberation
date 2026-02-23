@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ debat.titre }}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f0f2f5; }
+
+        h1 { color: #222; }
+
+        #graphe {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            display: block;
+            margin: 20px 0;
+            overflow: visible;
+        }
+
+        .lien {
+            fill: none;
+            stroke: #bbb;
+            stroke-width: 2px;
+        }
+
+        /* ── Tooltip : la bulle qui apparaît au survol ── */
+        #tooltip {
+            position: fixed;       /* fixé à l'écran, pas dans le SVG */
+            display: none;
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            max-width: 300px;
+            line-height: 1.5;
+            pointer-events: none;  /* ne bloque pas les clics */
+            z-index: 10;
+            white-space: pre-wrap; /* respecte les retours à la ligne */
+        }
+
+        /* ── Panneau de réponse ── */
+        #panneau {
+            display: none;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 500px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #panneau h3 { margin-top: 0; font-size: 15px; color: #444; }
+        textarea { width: 100%; box-sizing: border-box; }
+        button { margin-right: 8px; padding: 6px 14px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<h1>{{ debat.titre }}</h1>
+<p>{{ debat.description }}</p>
+
+<!-- ── TOOLTIP (bulle de survol) ── -->
+<div id="tooltip"></div>
+
+<!-- ── LE GRAPHE ── -->
+<svg id="graphe"></svg>
+
+<!-- ── PANNEAU DE RÉPONSE ── -->
+<div id="panneau">
+    <h3 id="panneau-titre"></h3>
+    <form method="POST" action="/debat/{{ debat.id_debat }}">
+        <input type="hidden" name="id_parent" id="input-parent" value="">
+        <textarea name="texte" rows="3" required placeholder="Votre argument..."></textarea><br><br>
+        <select name="type_arg">
+            <option value="soutien">✅ Soutien</option>
+            <option value="attaque">❌ Attaque</option>
+        </select>&nbsp;
+        <button type="submit">Envoyer</button>
+        <button type="button" onclick="fermerPanneau()">Annuler</button>
+    </form>
+</div>
+
+<br>
+<a href="/accueil">← Retour aux débats</a>
+
+
+<script>
+// ── 1. DONNÉES envoyées par Flask ──
+const donneesArbre = {{ arbre | tojson }};
+
+// ── 2. DIMENSIONS ──
+// On calcule la hauteur selon le nombre de noeuds pour éviter l'écrasement
+const nbNoeuds  = compterNoeuds(donneesArbre);
+const hauteur   = Math.max(400, nbNoeuds * 50);
+const largeur   = 960;
+const margeG    = 20;
+const margeD    = 20;
+
+function compterNoeuds(noeud) {
+    if (!noeud.enfants || noeud.enfants.length === 0) return 1;
+    return 1 + noeud.enfants.reduce((s, e) => s + compterNoeuds(e), 0);
+}
+
+// ── 3. DIMENSIONS DES RECTANGLES ──
+const RW = 140;  // largeur du rectangle
+const RH = 40;   // hauteur du rectangle
+
+// ── 4. PRÉPARER D3 ──
+const svg = d3.select("#graphe")
+    .attr("width",  largeur)
+    .attr("height", hauteur);
+
+// Groupe décalé pour laisser de la place à gauche au premier rectangle
+const g = svg.append("g")
+    .attr("transform", `translate(${RW / 2 + 10}, 0)`);
+
+// ── 5. CONSTRUIRE L'ARBRE D3 ──
+const racine = d3.hierarchy(donneesArbre, d => d.enfants);
+
+const layoutArbre = d3.tree()
+    .size([hauteur - 20, largeur - RW * 2 - 60]);
+
+layoutArbre(racine);
+
+// ── 6. DESSINER LES LIENS ──
+g.selectAll(".lien")
+    .data(racine.links())
+    .enter()
+    .append("path")
+    .attr("class", "lien")
+    .attr("d", d3.linkHorizontal()
+        .x(d => d.y)
+        .y(d => d.x)
+    );
+
+// ── 7. DESSINER LES NOEUDS ──
+const noeuds = g.selectAll(".noeud")
+    .data(racine.descendants())
+    .enter()
+    .append("g")
+    .attr("class", "noeud")
+    .attr("transform", d => `translate(${d.y}, ${d.x})`);
+
+// Couleur selon le type
+function couleur(type) {
+    if (type === "debat")   return "#4a90d9";
+    if (type === "soutien") return "#5cb85c";
+    if (type === "attaque") return "#d9534f";
+    return "#aaa";
+}
+
+// Rectangle pour chaque noeud
+noeuds.append("rect")
+    .attr("x", -RW / 2)
+    .attr("y", -RH / 2)
+    .attr("width",  RW)
+    .attr("height", RH)
+    .attr("rx", 6)  // coins arrondis
+    .attr("ry", 6)
+    .style("fill",   d => couleur(d.data.type))
+    .style("stroke", d => d3.color(couleur(d.data.type)).darker(0.6))
+    .style("stroke-width", "1.5px")
+    .style("cursor", "pointer")
+    // ── SURVOL : affiche la tooltip avec le texte complet ──
+    .on("mousemove", (event, d) => {
+        const tip = document.getElementById("tooltip");
+        tip.style.display = "block";
+        tip.style.left    = (event.clientX + 14) + "px";
+        tip.style.top     = (event.clientY - 10) + "px";
+        tip.textContent   = d.data.texte;
+    })
+    .on("mouseleave", () => {
+        document.getElementById("tooltip").style.display = "none";
+    })
+    // ── CLIC : ouvre le panneau de réponse ──
+    .on("click", (event, d) => ouvrirPanneau(d));
+
+// Texte court à l'intérieur du rectangle (tronqué à 18 caractères)
+noeuds.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dy", "0.35em")
+    .style("fill", "white")
+    .style("font-size", "11px")
+    .style("pointer-events", "none")
+    .text(d => {
+        const t = d.data.texte;
+        return t.length > 18 ? t.slice(0, 18) + "…" : t;
+    });
+
+
+// ── 8. INTERACTION ──
+function ouvrirPanneau(d) {
+    document.getElementById("panneau-titre").textContent = "↩ Répondre à : " + d.data.texte;
+    document.getElementById("input-parent").value = d.data.id === "root" ? "" : d.data.id;
+    document.getElementById("panneau").style.display = "block";
+    document.getElementById("tooltip").style.display = "none";
+}
+
+function fermerPanneau() {
+    document.getElementById("panneau").style.display = "none";
+}
+</script>
+
+</body>
+</html>

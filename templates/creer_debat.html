@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Créer un débat</title>
+</head>
+<body>
+
+<h1>Créer un débat</h1>
+
+{% if not themes %}
+    <p style="color:red;">Il n'y a aucun thème. Un admin doit d'abord créer un thème.</p>
+    <a href="/accueil">← Retour</a>
+{% else %}
+
+<form method="POST" action="/creer_debat">
+
+    <label>Thème :</label><br>
+    <select name="id_theme">
+        {% for t in themes %}
+            <option value="{{ t.id_theme }}">{{ t.nom_theme }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label>Titre du débat :</label><br>
+    <input type="text" name="titre" required><br><br>
+
+    <label>Description :</label><br>
+    <textarea name="description" rows="4" cols="50"></textarea><br><br>
+
+    <button type="submit">Créer</button>
+</form>
+
+<br>
+<a href="/accueil">← Retour</a>
+
+{% endif %}
+
+</body>
+</html>

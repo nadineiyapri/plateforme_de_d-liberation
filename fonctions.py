@@ -32,7 +32,7 @@ def create_argument(user,texte,type_arg,id_debat,id_parent=None):
         parent=Argument.query.get(id_parent)
         if not parent or parent.id_debat !=id_debat:
             raise ValueError("Argument parent invalide")
-    arg = Argument(texte=texte, type=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
+    arg = Argument(texte=texte, type_arg=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
     db.session.add(arg)
     db.session.commit()
     return arg
