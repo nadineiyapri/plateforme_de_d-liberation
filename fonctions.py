@@ -38,6 +38,13 @@ def create_argument(user,texte,type_arg,id_debat,id_parent=None):
     return arg
 
 def display_argument_tree(id_debat, parent_id=None, level=0):
+    """ cette fonction prend en paramètres id_debat,parent_id,level qui sont tous les trois des int 
+        Parcourt le débat de manière récursive pour lier chaque 'père' à ses 'fils'.
+         Cherche tous les arguments qui partagent le même identifiant de parent (parent_id)
+         et descend dans l'arborescence pour construire la hiérarchie du graphe.
+    
+         Retourne une liste ordonnée par niveau de profondeur (level).
+     """
 
     args = Argument.query.filter_by(id_debat=id_debat, id_parent=parent_id).all()
     tree = []
