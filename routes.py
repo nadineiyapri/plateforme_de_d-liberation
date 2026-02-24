@@ -207,6 +207,29 @@ def voter(id_debat):
     db.session.commit()
     return redirect(url_for("debat", id_debat=id_debat))
 # ─────────────────────────────────────────────
+# Statut d'un débat : ouvert ou fermé (admin seulement)
+# ─────────────────────────────────────────────
+@app.route("/debat/<int:id_debat>/toggle_statut", methods=["POST"])
+def toggle_statut_debat(id_debat):
+    """
+    Ferme / réouvre un débat.
+    Autorisé uniquement pour admin et prof.
+    """
+    user = User.query.get(session.get("user_id"))
+    if not user:
+        return redirect(url_for("index"))
+
+    if user.role not in ("admin", "prof"):
+        return redirect(url_for("debat", id_debat=id_debat))
+
+    debat_obj = Debat.query.get_or_404(id_debat)
+
+    # Toggle ouvert <-> fermé
+    debat_obj.statut = "fermé" if debat_obj.statut == "ouvert" else "ouvert"
+
+    db.session.commit()
+    return redirect(url_for("debat", id_debat=id_debat))
+# ─────────────────────────────────────────────
 # LANCEMENT
 # ─────────────────────────────────────────────
 if __name__ == "__main__":

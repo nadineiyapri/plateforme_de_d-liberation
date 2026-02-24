@@ -63,6 +63,18 @@
 {% endif %}
 <p>{{ debat.description }}</p>
 
+<p><strong>Statut :</strong> {{ debat.statut }}</p>
+
+{% if user.role in ["admin", "prof"] %}
+  <form method="POST" action="/debat/{{ debat.id_debat }}/toggle_statut">
+    {% if debat.statut == "ouvert" %}
+      <button type="submit">Fermer le débat</button>
+    {% else %}
+      <button type="submit">Réouvrir le débat</button>
+    {% endif %}
+  </form>
+{% endif %}
+
 <h3>Votes</h3>
 <p>Pour: {{ pour or 0 }} | Contre: {{ contre or 0 }}</p>
 
@@ -99,10 +111,12 @@
 <br>
 <a href="/accueil">← Retour aux débats</a>
 
-
+<script id="arbre-json" type="application/json">
+  {{ arbre | tojson }}
+</script>
 <script>
 // ── 1. DONNÉES envoyées par Flask ──
-const donneesArbre = {{ arbre | tojson }};
+const donneesArbre = JSON.parse(document.getElementById("arbre-json").textContent);;
 
 // ── 2. DIMENSIONS ──
 // On calcule la hauteur selon le nombre de noeuds pour éviter l'écrasement
