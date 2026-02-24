@@ -7,7 +7,10 @@ app = Flask(__name__)
 import os
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/21305721_uvoice.db'
+import os
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'instance', 'uvoice.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
     
@@ -56,7 +59,27 @@ class Argument(db.Model):
     id_parent = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=True)
     enfants = db.relationship('Argument', backref=db.backref('parent', remote_side=[id_argument]))
 
+class Vote(db.Model):
+    __tablename__ = "votes"
 
+    id_vote = db.Column(db.Integer, primary_key=True)
+
+    # "pour" ou "contre"
+    choix = db.Column(db.String(10), nullable=False)
+
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+
+    id_debat = db.Column(db.Integer, db.ForeignKey("debats.id_debat"), nullable=False)
+    debat = db.relationship("Debat", backref="votes")
+
+    id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
+    user = db.relationship("User")
+
+    # Empêche un user de voter deux fois sur le même débat
+    __table_args__ = (
+        db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),
+    )
+    
 if __name__ == '__main__':
     with app.app_context():
         # Recréation propre de la base

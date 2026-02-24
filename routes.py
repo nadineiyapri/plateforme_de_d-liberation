@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, session
-from models import app, db, User, Theme, Debat, Argument
+from models import app, db, User, Theme, Debat, Argument, Vote
 
 app.secret_key = "rouge_secret"
 
@@ -117,8 +117,7 @@ def construire_arbre(id_debat):
     }
 
 
-# ─────────────────────────────────────────────
-# PAGE D'UN DÉBAT : graphe interactif + formulaire
+## PAGE D'UN DÉBAT : graphe interactif + formulaire
 # ─────────────────────────────────────────────
 @app.route("/debat/<int:id_debat>", methods=["GET", "POST"])
 def debat(id_debat):
@@ -127,6 +126,34 @@ def debat(id_debat):
         return redirect(url_for("index"))
 
     debat_obj = Debat.query.get_or_404(id_debat)
+
+    # Empêcher d'ajouter des arguments si le débat est fermé
+
+    if request.method == "POST" and debat_obj.statut != "ouvert":
+        arbre = construire_arbre(id_debat)
+        return render_template(
+            "debat.html",
+            user=user,
+            debat=debat_obj,
+            arbre=arbre,
+            erreur="Ce débat est fermé. Impossible d'ajouter un argument."
+        )
+
+
+
+    # Appliquer la limite max_arguments
+
+    if request.method == "POST":
+        nb_args = Argument.query.filter_by(id_debat=id_debat).count()
+        if nb_args >= debat_obj.max_arguments:
+            arbre = construire_arbre(id_debat)
+            return render_template(
+                "debat.html",
+                user=user,
+                debat=debat_obj,
+                arbre=arbre,
+                erreur="Limite d'arguments atteinte pour ce débat."
+            )
 
     if request.method == "POST":
         texte     = request.form["texte"]
@@ -148,9 +175,37 @@ def debat(id_debat):
     # On construit l'arbre JSON et on l'envoie au template
     arbre = construire_arbre(id_debat)
 
-    return render_template("debat.html", user=user, debat=debat_obj, arbre=arbre)
+    pour = Vote.query.filter_by(id_debat=id_debat, choix="pour").count()
+    contre = Vote.query.filter_by(id_debat=id_debat, choix="contre").count()
+    mon_vote = Vote.query.filter_by(id_debat=id_debat, id_user=user.iduser).first() 
 
+    return render_template("debat.html", user=user, debat=debat_obj, arbre=arbre, pour=pour, contre=contre, mon_vote=mon_vote)
 
+# ─────────────────────────────────────────────
+# VOTER POUR UN DÉBAT
+# ─────────────────────────────────────────────
+@app.route("/debat/<int:id_debat>/vote", methods=["POST"])
+def voter(id_debat):
+    user = User.query.get(session.get("user_id"))
+    if not user:
+        return redirect(url_for("index"))
+
+    debat_obj = Debat.query.get_or_404(id_debat)
+
+    choix = request.form.get("choix")  # "pour" ou "contre"
+    if choix not in ("pour", "contre"):
+        return redirect(url_for("debat", id_debat=id_debat))
+
+    # Un seul vote par user et par débat : on met à jour si déjà voté
+    vote = Vote.query.filter_by(id_debat=id_debat, id_user=user.iduser).first()
+    if vote:
+        vote.choix = choix
+    else:
+        vote = Vote(choix=choix, id_debat=id_debat, id_user=user.iduser)
+        db.session.add(vote)
+
+    db.session.commit()
+    return redirect(url_for("debat", id_debat=id_debat))
 # ─────────────────────────────────────────────
 # LANCEMENT
 # ─────────────────────────────────────────────

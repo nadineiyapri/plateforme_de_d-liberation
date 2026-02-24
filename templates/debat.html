@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{{ debat.titre }}</title>
+    <title>{{ debat.titre }}</title> 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 20px; background: #f0f2f5; }
@@ -58,7 +58,22 @@
 <body>
 
 <h1>{{ debat.titre }}</h1>
+{% if erreur %}
+  <p style="color:red; font-weight:bold;">{{ erreur }}</p>
+{% endif %}
 <p>{{ debat.description }}</p>
+
+<h3>Votes</h3>
+<p>Pour: {{ pour or 0 }} | Contre: {{ contre or 0 }}</p>
+
+<form method="POST" action="{{ url_for('voter', id_debat=debat.id_debat) }}">
+  <button type="submit" name="choix" value="pour">Voter POUR</button>
+  <button type="submit" name="choix" value="contre">Voter CONTRE</button>
+</form>
+
+{% if mon_vote %}
+  <p>Ton vote : <strong>{{ mon_vote.choix }}</strong></p>
+{% endif %}
 
 <!-- ── TOOLTIP (bulle de survol) ── -->
 <div id="tooltip"></div>
