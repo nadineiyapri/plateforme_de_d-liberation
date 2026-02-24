@@ -4,10 +4,13 @@ from datetime import datetime
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///uvoice.db'
+import os
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/21305721_uvoice.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-
+    
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -72,4 +75,3 @@ if __name__ == '__main__':
 
         print("Test complet terminé.")
 
- 
