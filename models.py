@@ -57,7 +57,25 @@ class Argument(db.Model):
     id_auteur = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
     auteur = db.relationship('User')
     id_parent = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=True)
-    enfants = db.relationship('Argument', backref=db.backref('parent', remote_side=[id_argument]))
+    #quand on supprime un parent , on supprime les enfants 
+    enfants = db.relationship('Argument', backref=db.backref('parent', remote_side=[id_argument]), cascade="all,delete-orphan")
+    votes_recus=db.relationship('VoteArgument',backref'argument_concerne',cascade="all,delete-orphan")
+
+
+class VoteArgument(db.Model):
+    __tablename__ = "votes_arguments"
+    id_vote_arg = db.Column(db.Integer, primary_key=True)
+    valeur = db.Column(db.Integer, nullable=False) # +1 pour like, -1 pour dislike
+    
+    id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
+    id_argument = db.Column(db.Integer, db.ForeignKey("arguments.id_argument"), nullable=False)
+
+    # Sécurité : Un utilisateur ne vote qu'une fois par argument
+    __table_args__ = (
+        db.UniqueConstraint("id_user", "id_argument", name="unique_vote_arg_per_user"),
+    )
+
+
 
 class Vote(db.Model):
     __tablename__ = "votes"
@@ -97,4 +115,3 @@ if __name__ == '__main__':
 
 
         print("Test complet terminé.")
-
