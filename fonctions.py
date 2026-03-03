@@ -32,19 +32,12 @@ def create_argument(user,texte,type_arg,id_debat,id_parent=None):
         parent=Argument.query.get(id_parent)
         if not parent or parent.id_debat !=id_debat:
             raise ValueError("Argument parent invalide")
-    arg = Argument(texte=texte, type_arg=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
+    arg = Argument(texte=texte, type=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
     db.session.add(arg)
     db.session.commit()
     return arg
 
 def display_argument_tree(id_debat, parent_id=None, level=0):
-    """ cette fonction prend en paramètres id_debat,parent_id,level qui sont tous les trois des int 
-        Parcourt le débat de manière récursive pour lier chaque 'père' à ses 'fils'.
-         Cherche tous les arguments qui partagent le même identifiant de parent (parent_id)
-         et descend dans l'arborescence pour construire la hiérarchie du graphe.
-    
-         Retourne une liste ordonnée par niveau de profondeur (level).
-     """
 
     args = Argument.query.filter_by(id_debat=id_debat, id_parent=parent_id).all()
     tree = []
@@ -72,36 +65,110 @@ def display_full_debate_tree(id_debat):
     # On appelle la récursion pour les arguments, en commençant au level 1
     tree += display_argument_tree(id_debat, parent_id=None, level=1)
     return tree
-
-
-def get_graph_json(id_debat):
-    """ Cette fonction prend en arguments : id_debat : int 
-    Structure produite :
-    - Un nœud racine ('root') représentant le titre du débat.
-    - Une liste d'enfants contenant les arguments de premier niveau.
-    - Chaque argument contient récursivement ses propres réponses dans une liste 'enfants 
-    Elle transforme les données "plates" de la base de données en un objet 
-    imbriqué (arbre) directement exploitable par des bibliothèques de graphes (ex: D3.js).
-"""
+def add_arg(texte,type_arg,id_debat,id_auteur,id_parent=None):
+    """
+    Ajoute un argument en vérifiant la limite de 20 arguments
+    prend en paramètres un Texte de type Str , type_arg de type str (attaque ou soutien)
+    id_debat,id_auteur,id_parent (optionnel) qui sont des int 
+    renvoie tuple (Argument, str) ou tuple (None, str) : lobjet crée 
+    ou none accompagné d un message
+    """
+    #Vérifier si le débat existe
     debat = Debat.query.get(id_debat)
     if not debat:
-        return None
+        return None, "Débat introuvable."
 
-    # On récupère les arguments "racines" (ceux qui répondent directement au titre du débat)
-    racines = Argument.query.filter_by(id_debat=id_debat, id_parent=None).all()
+    # Vérification de la limite imposée 
+    nb_actuel = Argument.query.filter_by(id_debat=id_debat).count()
+    if nb_actuel >= 20:
+        return None, "La limite de 20 arguments est atteinte pour ce débat."
 
-    def build_node(arg):
-        return {
-            "id": arg.id_argument,
-            "texte": arg.texte,
-            "type": arg.type_arg,  # 'soutien' ou 'attaque'
-            "enfants": [build_node(enfant) for enfant in arg.enfants]
-        }
+    # Création de l'argument
+    nouvel_arg = Argument(
+        texte=texte,
+        type_arg=type_arg,
+        id_debat=id_debat,
+        id_auteur=id_auteur,
+        id_parent=id_parent
+    )
+    
+    try:
+        db.session.add(nouvel_arg)
+        db.session.commit()
+        return nouvel_arg, "Argument ajouté avec succès."
+    except Exception as e:
+        db.session.rollback()
+        return None, str(e)
+    
 
-    return {
-        "id": "root",
-        "texte": debat.titre,
-        "type": "debat",
-        "enfants": [build_node(r) for r in racines]
-    }
 
+
+def voter_argument(id_user, id_argument, valeur):
+    """
+    Enregistre un vote (+1 ou -1) sur un argument.
+    La contrainte d'unicité en DB empêchera les doublons.
+    prend en paramètres :
+    id_user, id_argument valeur qui sont des int 
+    renvoie un bool : True si le vote est enregistré 
+    False  si l user a deja voté 
+    """
+    nouveau_vote = VoteArgument(
+        id_user=id_user, 
+        id_argument=id_argument, 
+        valeur=valeur
+    )
+    try:
+        db.session.add(nouveau_vote)
+        db.session.commit()
+        return True
+    except:
+        db.session.rollback()
+        return False
+
+
+
+def get_graph_json(id_debat: int) -> dict:
+    """
+    Génère une structure de données JSON pour représenter le débat sous forme de graphe.
+    Inclut les scores et les types pour la visualisation (Sprint 2).
+    
+    Paramètres:
+        id_debat (int): L'identifiant du débat à extraire.
+        
+    Retourne:
+        dict: Un dictionnaire contenant deux listes : 'nodes' (bulles) et 'edges' (liens).
+    """
+    #On récupère tous les arguments liés à ce débat
+    arguments = Argument.query.filter_by(id_debat=id_debat).all()
+    
+    nodes = []
+    edges = []
+
+    for arg in arguments:
+        # Calcul du score dynamique (Somme des votes reçus)
+        # On utilise la relation 'votes_recus' définie dans models.py
+        score = sum(v.valeur for v in arg.votes_recus)
+        
+        #Création du nœud (La bulle d'argument)
+        nodes.append({
+            "data": {
+                "id": str(arg.id_argument),
+                "label": arg.texte[:40] + ("..." if len(arg.texte) > 40 else ""),
+                "type": arg.type_arg, # Utile pour colorier la bulle (vert/rouge)
+                "score": score,       # Utile pour la taille de la bulle
+                "auteur": arg.auteur.username if arg.auteur else "Anonyme"
+            }
+        })
+        
+        #Création du lien (L'arête) si l'argument est une réponse
+        if arg.id_parent:
+            edges.append({
+                "data": {
+                    "id": f"edge_{arg.id_argument}_{arg.id_parent}",
+                    "source": str(arg.id_argument), # L'argument actuel
+                    "target": str(arg.id_parent),   # L'argument auquel il répond
+                    "interaction": arg.type_arg     # Pour colorier la flèche (attaque/soutien)
+                }
+            })
+
+    return {"nodes": nodes, "edges": edges}
