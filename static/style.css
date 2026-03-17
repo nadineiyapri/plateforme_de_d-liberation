@@ -1,0 +1,32 @@
+body{
+    background: repeating-linear-gradient(45deg,
+    #fff,
+    #ffbd3a 25px,
+    #4a7aff 25px,
+    #e05952 25px
+    );
+}
+.signup{
+    background-color: brown;
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    font-size: 20px;
+}
+h1{
+    font-size: 100px;
+    position: absolute;
+    top: 10%;
+    width: 100%;
+    text-align: center;
+    color: brown;
+}
+h2{
+    font-size: 30px;
+    position: absolute;
+    top: 30%;
+    width: 100%;
+    text-align: center;
+    color: brown;
+    }
+

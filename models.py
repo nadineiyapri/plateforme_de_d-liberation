@@ -59,7 +59,7 @@ class Argument(db.Model):
     id_parent = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=True)
     #quand on supprime un parent , on supprime les enfants 
     enfants = db.relationship('Argument', backref=db.backref('parent', remote_side=[id_argument]), cascade="all,delete-orphan")
-    votes_recus=db.relationship('VoteArgument',backref'argument_concerne',cascade="all,delete-orphan")
+    votes_recus=db.relationship('VoteArgument',backref='argument_concerne',cascade="all,delete-orphan")
 
 
 class VoteArgument(db.Model):
