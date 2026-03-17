@@ -17,7 +17,7 @@ def create_debat(user,id_theme,titre,description):
 
     if user.role not in ('admin','prof','etudiant'):
         raise PermissionError("Seul un admin peut créer un thème")
-    debat=Debat(titre=titre,description=description, id_theme=id_theme)
+    debat=Debat(titre=titre,description=description, id_theme=id_theme,id_createur=user.iduser)
     db.session.add(debat)
     db.session.commit()
     return debat
@@ -32,7 +32,7 @@ def create_argument(user,texte,type_arg,id_debat,id_parent=None):
         parent=Argument.query.get(id_parent)
         if not parent or parent.id_debat !=id_debat:
             raise ValueError("Argument parent invalide")
-    arg = Argument(texte=texte, type=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
+    arg = Argument(texte=texte, type_arg=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
     db.session.add(arg)
     db.session.commit()
     return arg
@@ -46,7 +46,7 @@ def create_argument_tree(id_debat, parent_id=None, level=0):
     args = Argument.query.filter_by(id_debat=id_debat, id_parent=parent_id).all()
     tree = []
     for arg in args:
-        tree.append({"texte": arg.texte, "type": arg.type, "level": level})
+        tree.append({"texte": arg.texte, "type": arg.type_arg, "level": level})
         tree += create_argument_tree(id_debat, arg.id_argument, level + 1)
     return tree
 
