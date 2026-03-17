@@ -20,18 +20,22 @@
 
 <h2>Débats disponibles</h2>
 
-{% if debats %}
-    <ul>
-    {% for d in debats %}
-        <li>
-            <a href="/debat/{{ d.id_debat }}">{{ d.titre }}</a>
-            — <em>{{ d.statut }}</em>
-        </li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>Aucun débat pour l'instant.</p>
-{% endif %}
+<h2>Débats disponibles</h2>
+{%for theme in themes%}
+    <h3>{{ theme.nom_theme }}</h3>
+    {% if theme.debats %}
+        <ul>
+        {% for d in theme.debats %}
+            <li>
+                <a href="/debat/{{ d.id_debat }}">{{ d.titre }}</a>
+                — <em>{{ d.statut }}</em>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Aucun débat pour l'instant.</p>
+    {% endif %}
+{% endfor %}
 
 </body>
 </html>
