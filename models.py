@@ -98,6 +98,15 @@ class Vote(db.Model):
         db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),
     )
     
+def init_db():
+    db.create_all()
+    admin = User(nom="Alice", prenom="Admin", role="admin")
+    prof = User(nom="Bob", prenom="Prof", role="prof")
+    etudiant = User(nom="Charlie", prenom="Etudiant", role="etudiant")
+    db.session.add_all([admin, prof, etudiant])
+    db.session.commit()
+    return admin, prof, etudiant
+    
 if __name__ == '__main__':
     with app.app_context():
         # Recréation propre de la base
