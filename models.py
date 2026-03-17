@@ -97,7 +97,7 @@ class Vote(db.Model):
     __table_args__ = (
         db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),
     )
-    
+
 def init_db():
     db.create_all()
     admin = User(nom="Alice", prenom="Admin", role="admin")
