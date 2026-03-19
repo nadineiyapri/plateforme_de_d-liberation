@@ -76,14 +76,19 @@
 {% endif %}
 
 <h3>Votes</h3>
+
+{% set total = (pour or 0) + (contre or 0) or 1 %}
+
 <p>Pour: {{ pour or 0 }} | Contre: {{ contre or 0 }}</p>
 
-<div style="width: 70%; height: 25px; background-color: white; display: flex; margin-bottom: 10px;">
-    <div style="flex: {{ pour or 0 }}; background-color: green ;"></div>
-    <div style="flex: {{ contre or 0 }}; background-color: red;"></div>
+<div style="width:70%;height:25px;display:flex;margin-bottom:10px;">
+    <div style="flex:{{ pour or 0 }};background:green;"></div>
+    <div style="flex:{{ contre or 0 }};background:red;"></div>
 </div>
-<p>{{ pour or 0 }} / {{ (pour or 0) + (contre or 0) }} votes pour ({{ ((pour or 0)/((pour or 0)+(contre or 0)) * 100) }}%)</p>
-<p>{{ contre or 0 }} / {{ (contre or 0) + (pour or 0) }} votes contre ({{ ((contre or 0)/((contre or 0)+(pour or 0)) * 100)}}%)</p>
+
+<p>{{ pour or 0 }}/{{ total }} votes pour ({{ ((pour or 0)/total*100)|round(1) }}%)</p>
+<p>{{ contre or 0 }}/{{ total }} votes contre ({{ ((contre or 0)/total*100)|round(1) }}%)</p>
+
 
 <form method="POST" action="{{ url_for('voter', id_debat=debat.id_debat) }}">
   <button type="submit" name="choix" value="pour">Voter POUR</button>
