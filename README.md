@@ -162,7 +162,7 @@ Application fonctionnelle comprenant :
  Système de vote
  Module de décision finale
  Visualisation graphique interactive
- Projet académique – Sorbonne Universit
+ Projet académique – Sorbonne Université
  
  
  
