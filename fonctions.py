@@ -160,7 +160,7 @@ def get_graph_json(id_debat: int) -> dict:
                 "label": arg.texte[:40] + ("..." if len(arg.texte) > 40 else ""),
                 "type": arg.type_arg, # Utile pour colorier la bulle (vert/rouge)
                 "score": score,       # Utile pour la taille de la bulle
-                "auteur": arg.auteur.username if arg.auteur else "Anonyme"
+                "auteur": arg.auteur.nom if arg.auteur else "Anonyme"
             }
         })
         
