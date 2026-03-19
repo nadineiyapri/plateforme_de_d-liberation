@@ -164,6 +164,7 @@ const layoutArbre = d3.tree()
 
 layoutArbre(racine);
 
+
 // ── 6. DESSINER LES LIENS ──
 g.selectAll(".lien")
     .data(racine.links())
@@ -173,7 +174,14 @@ g.selectAll(".lien")
     .attr("d", d3.linkHorizontal()
         .x(d => d.y)
         .y(d => d.x)
-    );
+    )
+    .style("stroke", d => {
+        if (d.target.data.type === "soutien") return "#5cb85c"; // vert pour soutien
+        if (d.target.data.type === "attaque") return "#d9534f";  // rouge pour attaque
+        return "#bbb"; // gris par défaut (pour le sujet)
+    })
+    .style("stroke-width", 2)
+    .style("fill", "none");
 
 // ── 7. DESSINER LES NOEUDS ──
 const noeuds = g.selectAll(".noeud")
@@ -183,12 +191,10 @@ const noeuds = g.selectAll(".noeud")
     .attr("class", "noeud")
     .attr("transform", d => `translate(${d.y}, ${d.x})`);
 
-// Couleur selon le type
+// Couleur pour les rectangles
 function couleur(type) {
-    if (type === "debat")   return "#4a90d9";
-    if (type === "soutien") return "#5cb85c";
-    if (type === "attaque") return "#d9534f";
-    return "#aaa";
+    if (type === "debat") return "#4a90d9"; // bleu pour le sujet
+    return "#aaa"; // gris pour tous les arguments (soutien ou attaque)
 }
 
 // Rectangle pour chaque noeud
