@@ -23,16 +23,35 @@ def create_debat(user,id_theme,titre,description):
     return debat
 
 
-def create_argument(user,texte,type_arg,id_debat,id_parent=None):
-    """ cette fonction permet au user de créer/ajouter un argument   ,
-    elle prend en paramètres user de type User ,texte et type_arg de type String,id_debatet id_parent de type int. """
-    if type_arg not in ('soutien','attaque'):
-        raise ValueError("Utilisateur non autorisé")
+def create_argument(user, texte, type_arg, id_debat, id_parent=None):
+"""
+Version sécurisée avec limite de 3 arguments par débat.
+"""
+    # Vérification du type d'argument
+    if type_arg not in ('soutien', 'attaque'):
+        raise ValueError("Type d'argument invalide (doit être soutien ou attaque)")
+
+    #LA BARRIÈRE (Limite de 3 pour les tests)
+    nb_actuel = Argument.query.filter_by(id_debat=id_debat).count()
+    if nb_actuel >= 3:
+    # On lève une erreur pour bloquer l'exécution
+        raise ValueError("La limite de 3 arguments est atteinte pour ce débat.")
+
+    # Vérification du parent
     if id_parent:
-        parent=Argument.query.get(id_parent)
-        if not parent or parent.id_debat !=id_debat:
-            raise ValueError("Argument parent invalide")
-    arg = Argument(texte=texte, type_arg=type_arg, id_debat=id_debat, id_auteur=user.iduser, id_parent=id_parent)
+        parent = Argument.query.get(id_parent)
+    if not parent or parent.id_debat != id_debat:
+        raise ValueError("Argument parent invalide")
+
+    # Création si tout est OK
+    arg = Argument(
+    texte=texte,
+    type_arg=type_arg,
+    id_debat=id_debat,
+    id_auteur=user.iduser,
+    id_parent=id_parent
+    )
+
     db.session.add(arg)
     db.session.commit()
     return arg
