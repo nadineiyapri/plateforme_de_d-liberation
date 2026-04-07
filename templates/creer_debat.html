@@ -2,39 +2,55 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Créer un débat</title>
+    <title>Créer un Débat</title>
+    <style>
+        body {
+            margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center;
+            font-family: 'Segoe UI', sans-serif; background: #fdfdfd;
+        }
+        .form-card {
+            background: white; padding: 40px; border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 500px;
+        }
+        h1 { color: #d32f2f; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box;
+        }
+        .btn-submit {
+            width: 100%; padding: 12px; background: #d32f2f; color: white;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-
-<h1>Créer un débat</h1>
-
-{% if not themes %}
-    <p style="color:red;">Il n'y a aucun thème. Un admin doit d'abord créer un thème.</p>
-    <a href="/accueil">← Retour</a>
-{% else %}
-
-<form method="POST" action="/creer_debat">
-
-    <label>Thème :</label><br>
-    <select name="id_theme">
-        {% for t in themes %}
-            <option value="{{ t.id_theme }}">{{ t.nom_theme }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <label>Titre du débat :</label><br>
-    <input type="text" name="titre" required><br><br>
-
-    <label>Description :</label><br>
-    <textarea name="description" rows="4" cols="50"></textarea><br><br>
-
-    <button type="submit">Créer</button>
-</form>
-
-<br>
-<a href="/accueil">← Retour</a>
-
-{% endif %}
-
+    <div class="form-card">
+        <h1>Nouveau Débat</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label>Titre du débat</label>
+                <input type="text" name="titre" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Thème</label>
+                <select name="id_theme">
+                    {% for t in themes %}
+                    <option value="{{ t.id_theme }}">{{ t.nom_theme }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Date limite (optionnel)</label>
+                <input type="datetime-local" name="date_limite">
+            </div>
+            <button type="submit" class="btn-submit">Lancer le débat</button>
+            <a href="/accueil" style="display:block; text-align:center; margin-top:15px; color:#999; text-decoration:none;">Annuler</a>
+        </form>
+    </div>
 </body>
 </html>

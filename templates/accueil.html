@@ -3,39 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <title>UVoice - Accueil</title>
+    <style>
+        /* Base & Couleurs */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #fdfdfd; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333; 
+        }
+        .container { max-width: 1100px; margin: auto; }
+
+        /* En-tête en Rouge */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 0; 
+            border-bottom: 3px solid #d32f2f; 
+            margin-bottom: 40px; 
+        }
+        h1 { color: #d32f2f; margin: 0; font-size: 2.5em; text-transform: uppercase; }
+
+        /* Bouton Ajouter Débat - Rouge */
+        .btn-creer { 
+            background: #d32f2f; 
+            color: white; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            transition: 0.3s;
+            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.2);
+        }
+        .btn-creer:hover { background: #b71c1c; transform: translateY(-2px); }
+
+        /* Titres de sections */
+        .section-title { 
+            margin-top: 50px; 
+            font-size: 1.2em; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: #444;
+            border-left: 5px solid #d32f2f;
+            padding-left: 15px;
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 25px; 
+            margin-top: 25px; 
+        }
+
+        /* --- STYLES DES CARTES --- */
+        .card { 
+            padding: 25px; 
+            border-radius: 15px; 
+            position: relative; 
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 200px;
+        }
+
+        /* Débat OUVERT : VIOLET */
+        .card-ouvert { 
+            background: #f5f0ff; 
+            border: 2px solid #8e44ad; 
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.1);
+        }
+        .card-ouvert .debat-link { color: #8e44ad; }
+        .card-ouvert:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(142, 68, 173, 0.2); }
+
+        /* Débat FERMÉ : GRIS */
+        .card-ferme { 
+            background: #f2f2f2; 
+            border: 2px solid #bdc3c7; 
+            filter: grayscale(1);
+            opacity: 0.7;
+        }
+        .card-ferme .debat-link { color: #7f8c8d; }
+
+        .debat-link { 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 1.4em; 
+            display: block; 
+            margin-bottom: 10px; 
+        }
+
+        /* Bouton Supprimer Classique (Rouge) */
+        .btn-supprimer { 
+            background: #fff; 
+            color: #d32f2f; 
+            border: 1px solid #d32f2f; 
+            padding: 6px 12px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 11px; 
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+        .btn-supprimer:hover { 
+            background: #d32f2f; 
+            color: white; 
+        }
+
+        .meta { font-size: 0.85em; color: #666; margin-top: 15px; font-weight: bold; }
+        .description { color: #555; font-size: 0.95em; line-height: 1.4; }
+
+    </style>
 </head>
 <body>
 
-<h1>Bonjour {{ user.prenom }} {{ user.nom }} ({{ user.role }})</h1>
+<div class="container">
+    <div class="header">
+        <h1>UVoice</h1>
+        <div>
+            <a href="/creer_debat" class="btn-creer">Lancer un débat</a>
+            <a href="/logout" style="margin-left: 20px; color: #d32f2f; text-decoration: none; font-size: 0.9em;">Déconnexion</a>
+        </div>
+    </div>
 
-<hr>
+    <p style="font-size: 1.1em;">Bonjour, <span style="color: #d32f2f; font-weight: bold;">{{ user.prenom }}</span> 👋</p>
 
-<h2>Que voulez-vous faire ?</h2>
-
-<!-- Créer un thème (admin seulement, mais on laisse le lien visible, le serveur gère l'erreur) -->
-<p><a href="/creer_theme">➕ Créer un thème</a></p>
-<p><a href="/creer_debat">➕ Créer un débat</a></p>
-
-<hr>
-
-<h2>Débats disponibles</h2>
-
-<h2>Débats disponibles</h2>
-{%for theme in themes%}
-    <h3>{{ theme.nom_theme }}</h3>
-    {% if theme.debats %}
-        <ul>
-        {% for d in theme.debats %}
-            <li>
-                <a href="/debat/{{ d.id_debat }}">{{ d.titre }}</a>
-                — <em>{{ d.statut }}</em>
-            </li>
+    <!-- SECTION : DÉBATS OUVERTS (VIOLET) -->
+    <h2 class="section-title">Débats Actifs</h2>
+    <div class="grid">
+        {% for d in debats %}
+            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
+            {% if not est_clos %}
+            <div class="card card-ouvert">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
+                        
+                        {% if user.role in ['admin', 'prof'] or d.id_createur == user.iduser %}
+                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
+                            <button type="submit" class="btn-supprimer" onclick="return confirm('Supprimer ce débat ?')">Supprimer</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <p class="description">{{ d.description[:120] }}...</p>
+                </div>
+                <div class="meta">📅 Clôture : {{ d.date_limite.strftime('%d/%m %H:%M') if d.date_limite else 'Illimité' }}</div>
+            </div>
+            {% endif %}
         {% endfor %}
-        </ul>
-    {% else %}
-        <p>Aucun débat pour l'instant.</p>
-    {% endif %}
-{% endfor %}
+    </div>
+
+    <!-- SECTION : ARCHIVES (GRIS) -->
+    <h2 class="section-title" style="border-left-color: #bdc3c7;">Archives (Clos)</h2>
+    <div class="grid">
+        {% for d in debats %}
+            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
+            {% if est_clos %}
+            <div class="card card-ferme">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
+                        
+                        {% if user.role in ['admin', 'prof'] or d.id_createur == user.iduser %}
+                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
+                            <button type="submit" class="btn-supprimer" onclick="return confirm('Supprimer définitivement ?')">Supprimer</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <p class="description">Les participations sont terminées pour ce sujet.</p>
+                </div>
+                <div class="meta">🚫 Terminé</div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</div>
 
 </body>
 </html>

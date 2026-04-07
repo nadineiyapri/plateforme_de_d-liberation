@@ -24,9 +24,11 @@ def create_debat(user,id_theme,titre,description):
 
 
 def create_argument(user, texte, type_arg, id_debat, id_parent=None):
-"""
-Version sécurisée avec limite de 3 arguments par débat.
-"""
+    """
+    Version sécurisée avec limite de 3 arguments par débat.
+    """
+    if est_temps_ecoule(id_debat):
+        raise ValueError("Le débat est clos : la date limite est dépassée.")
     # Vérification du type d'argument
     if type_arg not in ('soutien', 'attaque'):
         raise ValueError("Type d'argument invalide (doit être soutien ou attaque)")
@@ -135,6 +137,12 @@ def voter_argument(id_user, id_argument, valeur):
     renvoie un bool : True si le vote est enregistré 
     False  si l user a deja voté 
     """
+    # On récupère l'argument pour connaître son débat
+    arg = Argument.query.get(id_argument)
+    
+    # --- SÉCURITÉ : Pas de vote si temps écoulé ---
+    if arg and est_temps_ecoule(arg.id_debat):
+        return False # Le vote est refusé
     nouveau_vote = VoteArgument(
         id_user=id_user, 
         id_argument=id_argument, 
@@ -195,3 +203,15 @@ def get_graph_json(id_debat: int) -> dict:
             })
 
     return {"nodes": nodes, "edges": edges}
+def est_temps_ecoule(id_debat):
+    """
+    Vérifie si la date actuelle a dépassé la date limite du débat.
+    Retourne True si le débat est fini, False s'il est encore ouvert.
+    """
+    debat = Debat.query.get(id_debat)
+    # Si pas de date limite, le débat reste ouvert par défaut
+    if not debat or not debat.date_limite:
+        return False
+    
+    # On compare maintenant avec la date limite
+    return datetime.utcnow() > debat.date_limite

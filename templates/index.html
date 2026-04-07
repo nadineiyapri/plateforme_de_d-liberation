@@ -3,28 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <title>UVoice - Connexion</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Fond rouge fondu clair (dégradé) */
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 { color: #d32f2f; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box; /* Important pour que le padding ne dépasse pas */
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #d32f2f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover { background-color: #b71c1c; }
+    </style>
 </head>
 <body>
 
-<h1>Bienvenue sur UVoice</h1>
-<p>Entrez vos informations pour continuer :</p>
-
-<form method="POST" action="/">
-    <label>Nom :</label><br>
-    <input type="text" name="nom" required><br><br>
-
-    <label>Prénom :</label><br>
-    <input type="text" name="prenom" required><br><br>
-
-    <label>Rôle :</label><br>
-    <select name="role">
-        <option value="etudiant">Étudiant</option>
-        <option value="prof">Professeur</option>
-        <option value="admin">Admin</option>
-    </select><br><br>
-
-    <button type="submit">Entrer</button>
-</form>
+<div class="login-card">
+    <h1>UVoice</h1>
+    <form action="/" method="POST">
+        <div class="form-group">
+            <label>Nom</label>
+            <input type="text" name="nom" placeholder="Ex: Martin" required>
+        </div>
+        <div class="form-group">
+            <label>Prénom</label>
+            <input type="text" name="prenom" placeholder="Ex: Jean" required>
+        </div>
+        <div class="form-group">
+            <label>Rôle</label>
+            <select name="role">
+                <option value="etudiant">Étudiant</option>
+                <option value="prof">Professeur</option>
+                <option value="admin">Administrateur</option>
+            </select>
+        </div>
+        <button type="submit">Se connecter</button>
+    </form>
+</div>
 
 </body>
 </html>

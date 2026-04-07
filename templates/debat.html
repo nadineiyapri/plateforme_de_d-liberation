@@ -2,251 +2,134 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>{{ debat.titre }}</title> 
+    <title>{{ debat.titre }} - UVoice</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 20px; background: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        .top-bar { padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        
+        #graphe-container { flex-grow: 1; position: relative; background: #fafafa; }
+        #graphe { width: 100%; height: 100%; }
 
-        h1 { color: #222; }
+        /* Panneau flottant propre */
+        #panneau { display: none; position: fixed; right: 20px; top: 80px; width: 320px; background: white; 
+                   border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); padding: 20px; border: 1px solid #eee; }
 
-        #graphe {
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background: white;
-            display: block;
-            margin: 20px 0;
-            overflow: visible;
-        }
+        .status-banner { background: #fff5f5; color: #d32f2f; text-align: center; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #f5c6cb; }
 
-        .lien {
-            fill: none;
-            stroke: #bbb;
-            stroke-width: 2px;
-        }
+        .btn-vote { padding: 8px 16px; border-radius: 6px; border: 1px solid #ddd; cursor: pointer; font-weight: bold; background: white; }
+        .btn-vote:hover:not(:disabled) { background: #f0f0f0; }
 
-        /* ── Tooltip : la bulle qui apparaît au survol ── */
-        #tooltip {
-            position: fixed;       /* fixé à l'écran, pas dans le SVG */
-            display: none;
-            background: #333;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            max-width: 300px;
-            line-height: 1.5;
-            pointer-events: none;  /* ne bloque pas les clics */
-            z-index: 10;
-            white-space: pre-wrap; /* respecte les retours à la ligne */
-        }
+        .btn-supprimer-classic { background: #fff5f5; color: #c0392b; border: 1px solid #f5c6cb; padding: 8px; width: 100%; 
+                                 border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 15px; }
 
-        /* ── Panneau de réponse ── */
-        #panneau {
-            display: none;
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 8px;
-            max-width: 500px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        #panneau h3 { margin-top: 0; font-size: 15px; color: #444; }
-        textarea { width: 100%; box-sizing: border-box; }
-        button { margin-right: 8px; padding: 6px 14px; cursor: pointer; }
+        textarea { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 6px; padding: 10px; box-sizing: border-box; resize: none; }
+        .btn-submit { background: #d32f2f; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-submit:disabled { background: #ccc; }
     </style>
 </head>
 <body>
 
-<h1>{{ debat.titre }}</h1>
-{% if erreur %}
-  <p style="color:red; font-weight:bold;">{{ erreur }}</p>
-{% endif %}
-<p>{{ debat.description }}</p>
+{% set est_clos = (debat.statut != 'ouvert') or (debat.date_limite and maintenant > debat.date_limite) %}
 
-<p><strong>Statut :</strong> {{ debat.statut }}</p>
-
-{% if user.role in ["admin", "prof"] %}
-  <form method="POST" action="/debat/{{ debat.id_debat }}/toggle_statut">
-    {% if debat.statut == "ouvert" %}
-      <button type="submit">Fermer le débat</button>
-    {% else %}
-      <button type="submit">Réouvrir le débat</button>
-    {% endif %}
-  </form>
+{% if est_clos %}
+<div class="status-banner">Ce débat est clos. Les contributions sont désactivées.</div>
 {% endif %}
 
-<h3>Votes</h3>
-
-{% set total = (pour or 0) + (contre or 0) or 1 %}
-
-<p>Pour: {{ pour or 0 }} | Contre: {{ contre or 0 }}</p>
-
-<div style="width:70%;height:25px;display:flex;margin-bottom:10px;">
-    <div style="flex:{{ pour or 0 }};background:green;"></div>
-    <div style="flex:{{ contre or 0 }};background:red;"></div>
+<div class="top-bar">
+    <div>
+        <a href="/accueil" style="text-decoration:none; color:#999; font-size: 14px;">← Retour</a>
+        <h2 style="margin: 5px 0 0 0;">{{ debat.titre }}</h2>
+    </div>
+    
+    <div style="display: flex; gap: 10px;">
+        <form action="{{ url_for('voter', id_debat=debat.id_debat) }}" method="POST">
+            <button type="submit" name="choix" value="pour" class="btn-vote" style="color: #28a745;" {% if est_clos %}disabled{% endif %}>Pour ({{ pour }})</button>
+            <button type="submit" name="choix" value="contre" class="btn-vote" style="color: #dc3545;" {% if est_clos %}disabled{% endif %}>Contre ({{ contre }})</button>
+        </form>
+    </div>
 </div>
 
-<p>{{ pour or 0 }}/{{ total }} votes pour ({{ ((pour or 0)/total*100)|round(1) }}%)</p>
-<p>{{ contre or 0 }}/{{ total }} votes contre ({{ ((contre or 0)/total*100)|round(1) }}%)</p>
+<div id="graphe-container">
+    <svg id="graphe"></svg>
 
+    <!-- PANNEAU -->
+    <div id="panneau">
+        <h4 id="panneau-titre" style="margin-top:0;">Répondre</h4>
+        
+        <div id="zone-suppr-arg" style="display: none;">
+            {% if user.role in ['admin', 'prof'] %}
+            <form id="form-delete-arg" method="POST" action="">
+                <button type="submit" class="btn-supprimer-classic" onclick="return confirm('Supprimer cet argument ?')">Supprimer l'argument</button>
+            </form>
+            <hr style="border:0; border-top:1px solid #eee; margin-bottom:15px;">
+            {% endif %}
+        </div>
 
-<form method="POST" action="{{ url_for('voter', id_debat=debat.id_debat) }}">
-  <button type="submit" name="choix" value="pour">Voter POUR</button>
-  <button type="submit" name="choix" value="contre">Voter CONTRE</button>
-</form>
-
-{% if mon_vote %}
-  <p>Ton vote : <strong>{{ mon_vote.choix }}</strong></p>
-{% endif %}
-
-<!-- ── TOOLTIP (bulle de survol) ── -->
-<div id="tooltip"></div>
-
-<!-- ── LE GRAPHE ── -->
-<svg id="graphe"></svg>
-
-<!-- ── PANNEAU DE RÉPONSE ── -->
-<div id="panneau">
-    <h3 id="panneau-titre"></h3>
-    <form method="POST" action="/debat/{{ debat.id_debat }}">
-        <input type="hidden" name="id_parent" id="input-parent" value="">
-        <textarea name="texte" rows="3" required placeholder="Votre argument..."></textarea><br><br>
-        <select name="type_arg">
-            <option value="soutien">✅ Soutien</option>
-            <option value="attaque">❌ Attaque</option>
-        </select>&nbsp;
-        <button type="submit">Envoyer</button>
-        <button type="button" onclick="fermerPanneau()">Annuler</button>
-    </form>
+        <form method="POST" action="/debat/{{ debat.id_debat }}">
+            <input type="hidden" name="id_parent" id="input-parent">
+            <textarea name="texte" placeholder="Votre argument..." required></textarea>
+            
+            <label style="display:block; margin-top:10px; font-size:12px; color:#666;">Type de réponse :</label>
+            <select name="type_arg" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;">
+                <option value="soutien">Soutien (Vert)</option>
+                <option value="attaque">Attaque (Rouge)</option>
+            </select>
+            
+            <button type="submit" class="btn-submit" {% if est_clos %}disabled{% endif %}>Publier l'argument</button>
+            <button type="button" onclick="document.getElementById('panneau').style.display='none'" style="width:100%; background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Annuler</button>
+        </form>
+    </div>
 </div>
 
-<br>
-<a href="/accueil">← Retour aux débats</a>
-
-<script id="arbre-json" type="application/json">
-  {{ arbre | tojson }}
-</script>
+<script id="arbre-json" type="application/json">{{ arbre | tojson }}</script>
 <script>
-// ── 1. DONNÉES envoyées par Flask ──
-const donneesArbre = JSON.parse(document.getElementById("arbre-json").textContent);;
+    const data = JSON.parse(document.getElementById('arbre-json').textContent);
+    const svg = d3.select("#graphe");
+    const container = document.getElementById('graphe-container');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
 
-// ── 2. DIMENSIONS ──
-// On calcule la hauteur selon le nombre de noeuds pour éviter l'écrasement
-const nbNoeuds  = compterNoeuds(donneesArbre);
-const hauteur   = Math.max(400, nbNoeuds * 50);
-const largeur   = 960;
-const margeG    = 20;
-const margeD    = 20;
+    const root = d3.hierarchy(data);
+    const treeLayout = d3.tree().size([height - 100, width - 200]);
+    treeLayout(root);
 
-function compterNoeuds(noeud) {
-    if (!noeud.enfants || noeud.enfants.length === 0) return 1;
-    return 1 + noeud.enfants.reduce((s, e) => s + compterNoeuds(e), 0);
-}
+    const g = svg.append("g").attr("transform", "translate(100,50)");
 
-// ── 3. DIMENSIONS DES RECTANGLES ──
-const RW = 140;  // largeur du rectangle
-const RH = 40;   // hauteur du rectangle
+    g.selectAll(".link").data(root.links()).enter().append("path")
+     .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
+     .attr("fill", "none").attr("stroke", "#eee").attr("stroke-width", 2);
 
-// ── 4. PRÉPARER D3 ──
-const svg = d3.select("#graphe")
-    .attr("width",  largeur)
-    .attr("height", hauteur);
-
-// Groupe décalé pour laisser de la place à gauche au premier rectangle
-const g = svg.append("g")
-    .attr("transform", `translate(${RW / 2 + 10}, 0)`);
-
-// ── 5. CONSTRUIRE L'ARBRE D3 ──
-const racine = d3.hierarchy(donneesArbre, d => d.enfants);
-
-const layoutArbre = d3.tree()
-    .size([hauteur - 20, largeur - RW * 2 - 60]);
-
-layoutArbre(racine);
-
-
-// ── 6. DESSINER LES LIENS ──
-g.selectAll(".lien")
-    .data(racine.links())
-    .enter()
-    .append("path")
-    .attr("class", "lien")
-    .attr("d", d3.linkHorizontal()
-        .x(d => d.y)
-        .y(d => d.x)
-    )
-    .style("stroke", d => {
-        if (d.target.data.type === "soutien") return "#5cb85c"; // vert pour soutien
-        if (d.target.data.type === "attaque") return "#d9534f";  // rouge pour attaque
-        return "#bbb"; // gris par défaut (pour le sujet)
-    })
-    .style("stroke-width", 2)
-    .style("fill", "none");
-
-// ── 7. DESSINER LES NOEUDS ──
-const noeuds = g.selectAll(".noeud")
-    .data(racine.descendants())
-    .enter()
-    .append("g")
-    .attr("class", "noeud")
-    .attr("transform", d => `translate(${d.y}, ${d.x})`);
-
-// Couleur pour les rectangles
-function couleur(type) {
-    if (type === "debat") return "#4a90d9"; // bleu pour le sujet
-    return "#aaa"; // gris pour tous les arguments (soutien ou attaque)
-}
-
-// Rectangle pour chaque noeud
-noeuds.append("rect")
-    .attr("x", -RW / 2)
-    .attr("y", -RH / 2)
-    .attr("width",  RW)
-    .attr("height", RH)
-    .attr("rx", 6)  // coins arrondis
-    .attr("ry", 6)
-    .style("fill",   d => couleur(d.data.type))
-    .style("stroke", d => d3.color(couleur(d.data.type)).darker(0.6))
-    .style("stroke-width", "1.5px")
+    cconst node = g.selectAll(".node")
+    .data(root.descendants())
+    .enter().append("g")
+    .attr("transform", d => `translate(${d.y},${d.x})`)
     .style("cursor", "pointer")
-    // ── SURVOL : affiche la tooltip avec le texte complet ──
-    .on("mousemove", (event, d) => {
-        const tip = document.getElementById("tooltip");
-        tip.style.display = "block";
-        tip.style.left    = (event.clientX + 14) + "px";
-        tip.style.top     = (event.clientY - 10) + "px";
-        tip.textContent   = d.data.texte;
-    })
-    .on("mouseleave", () => {
-        document.getElementById("tooltip").style.display = "none";
-    })
-    // ── CLIC : ouvre le panneau de réponse ──
-    .on("click", (event, d) => ouvrirPanneau(d));
-
-// Texte court à l'intérieur du rectangle (tronqué à 18 caractères)
-noeuds.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dy", "0.35em")
-    .style("fill", "white")
-    .style("font-size", "11px")
-    .style("pointer-events", "none")
-    .text(d => {
-        const t = d.data.texte;
-        return t.length > 18 ? t.slice(0, 18) + "…" : t;
+    .on("click", (event, d) => {
+        // ... (ton code de clic existant pour ouvrir le panneau)
     });
 
+// 2. C'est ICI qu'on définit la couleur des boules
+node.append("circle")
+    .attr("r", 10)
+    .attr("fill", d => {
+        if (d.data.id === "root") return "#8e44ad"; // Le centre (sujet) reste en VIOLET
+        
+        // INVERSION DEMANDÉE :
+        // Si c'est un soutien -> ROUGE (#d32f2f)
+        // Si c'est une attaque -> VERT (#28a745)
+        return d.data.type === "soutien" ? "#d32f2f" : "#28a745";
+    })
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 2);
 
-// ── 8. INTERACTION ──
-function ouvrirPanneau(d) {
-    document.getElementById("panneau-titre").textContent = "↩ Répondre à : " + d.data.texte;
-    document.getElementById("input-parent").value = d.data.id === "root" ? "" : d.data.id;
-    document.getElementById("panneau").style.display = "block";
-    document.getElementById("tooltip").style.display = "none";
-}
-
-function fermerPanneau() {
-    document.getElementById("panneau").style.display = "none";
-}
+// 3. Le texte sous les boules
+node.append("text")
+    .attr("dy", 25)
+    .attr("text-anchor", "middle")
+    .style("font-size", "12px")
+    .style("fill", "#555")
+    .text(d => d.data.texte.substring(0, 20) + "...");
 </script>
 
 </body>
