@@ -4,123 +4,202 @@
     <meta charset="UTF-8">
     <title>UVoice - Accueil</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdfdfd; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 3px solid #d32f2f; margin-bottom: 30px; }
-        h1 { color: #d32f2f; margin: 0; text-transform: uppercase; font-size: 2.5em; }
-        .btn-creer { background: #d32f2f; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; }
-        .admin-box { background: #fff5f5; padding: 25px; border-radius: 12px; border: 1px solid #d32f2f; margin-bottom: 40px; }
-        .theme-tag { background: white; padding: 5px 12px; border-radius: 6px; border: 1px solid #ddd; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-        .section-title { margin-top: 40px; font-size: 1.4em; text-transform: uppercase; border-left: 6px solid; padding-left: 15px; font-weight: bold; margin-bottom: 20px; }
-        .title-violet { color: #8e44ad; border-left-color: #8e44ad; }
-        .title-gris { color: #7f8c8d; border-left-color: #7f8c8d; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 50px; }
-        .card { padding: 25px; border-radius: 15px; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px; }
-        .card-ouvert { background: #f5f0ff; border: 2px solid #8e44ad; }
-        .card-ouvert .debat-link { color: #8e44ad; text-decoration: none; font-weight: bold; font-size: 1.3em; }
-        .card-ferme { background: #f2f2f2; border: 2px solid #bdc3c7; opacity: 0.8; }
-        .card-ferme .debat-link { color: #7f8c8d; text-decoration: none; font-weight: bold; font-size: 1.3em; }
-        .btn-supprimer { background: white; color: #d32f2f; border: 1px solid #d32f2f; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: rgba(255,255,255,0.95);
+            border-radius: 30px;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .user-info h2 { color: #b23c1c; font-size: 1.5rem; }
+        .user-info p { color: #6d4c41; }
+        .btn {
+            background: #c4452c;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 0 5px;
+            display: inline-block;
+            transition: 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover { background: #a3321c; transform: scale(1.02); }
+        .btn-danger { background: #7b3f2a; }
+        .section-title {
+            font-size: 1.8rem;
+            color: #4e2e24;
+            margin: 30px 0 20px 0;
+            padding-left: 10px;
+            border-left: 6px solid #f06292;
+        }
+        .debat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+            border-left: 8px solid;
+        }
+        .debat-card.ouvert { border-left-color: #9b59b6; background: #fef9ff; }
+        .debat-card.ferme { border-left-color: #95a5a6; background: #f4f6f7; opacity: 0.85; }
+        .debat-titre { font-size: 1.4rem; font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
+        .debat-meta { display: flex; flex-wrap: wrap; gap: 15px; margin: 12px 0; font-size: 0.85rem; color: #7f8c8d; }
+        .badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
+        .badge.violet { background: #9b59b6; color: white; }
+        .badge.gris { background: #95a5a6; color: white; }
+        .flex-actions { display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap; }
+        .theme-section { background: rgba(255,255,255,0.9); border-radius: 30px; padding: 25px; margin-top: 40px; }
+        .theme-section h3 { color: #b23c1c; margin-bottom: 15px; }
+        .theme-badge { background: white; border-radius: 50px; padding: 6px 14px; margin: 5px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .empty-msg { color: #4e2e24; text-align: center; padding: 40px; font-style: italic; background: rgba(255,255,255,0.7); border-radius: 30px; }
+        /* Menu déroulant trois points */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown button {
+            background: none;
+            font-size: 28px;
+            padding: 0 10px;
+            cursor: pointer;
+            border: none;
+            color: #c4452c;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            border-radius: 12px;
+        }
+        .dropdown-content a:hover { background-color: #f1f1f1; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>UVoice</h1>
-        <a href="/creer_debat" class="btn-creer">+ Nouveau Débat</a>
-    </div>
-
-    {% if user.role == 'admin' %}
-    <div class="admin-box">
-        <h3 style="color:#d32f2f; margin-top:0;">Gestion des Thèmes</h3>
-        <form action="/ajouter_theme" method="POST" style="display:flex; gap:10px; margin-bottom:20px;">
-            <input type="text" name="nom_theme" placeholder="Nom du nouveau thème" required style="flex-grow:1; padding:12px; border-radius:8px; border:1px solid #ddd;">
-            <button type="submit" class="btn-creer">Ajouter</button>
-        </form>
-        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-            {% for t in themes %}
-            <div class="theme-tag">
-                <strong>{{ t.nom_theme }}</strong>
-                <form action="/supprimer_theme/{{ t.id_theme }}" method="POST" style="margin:0;">
-                    <button type="submit" style="color:#d32f2f; border:none; background:none; cursor:pointer; font-size:16px; font-weight:bold;">×</button>
-                </form>
+        <div class="user-info">
+            <h2>🎤 {{ user.prenom }} {{ user.nom }} <span style="font-size:0.9rem;">({{ user.role }})</span></h2>
+            <p>Bienvenue sur UVoice – Exprimez-vous !</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="{{ url_for('creer_debat') }}" class="btn">+ Nouveau débat</a>
+            <!-- Menu trois points -->
+            <div class="dropdown">
+                <button>⋮</button>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('logout') }}">🚪 Déconnexion</a>
+                </div>
             </div>
-            {% endfor %}
         </div>
     </div>
+
+    <!-- DÉBATS OUVERTS -->
+    <div class="section-title">🎯 Débats ouverts <span style="font-size:1rem;">(violet)</span></div>
+    {% if debats_ouverts %}
+        {% for d in debats_ouverts %}
+        <div class="debat-card ouvert">
+            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}" style="text-decoration:none; color:#2c3e50;">{{ d.titre }}</a></div>
+            <div class="debat-meta">
+                <span>📅 {{ d.date_creation.strftime('%d/%m/%Y') }}</span>
+                <span>👍 Soutien: {{ d.nb_soutien }}</span>
+                <span>⚔️ Attaque: {{ d.nb_attaque }}</span>
+                <span>👤 {{ d.createur.prenom }} {{ d.createur.nom }}</span>
+                {% if d.date_limite %}<span>⏳ Limite: {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
+                <span class="badge violet">Ouvert</span>
+            </div>
+            <p>{{ d.description[:120] }}...</p>
+            <div class="flex-actions">
+                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn" style="background:#9b59b6;">Participer</a>
+                {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
+                <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-msg">Aucun débat ouvert pour le moment. Lancez-en un !</div>
     {% endif %}
 
-    <h2 class="section-title title-violet">Débats en cours</h2>
-    <div class="grid">
-        {% for d in debats %}
-            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
-            {% if not est_clos %}
-            <div class="card card-ouvert">
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
-                        {% if user.role == 'admin' %}
-                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
-                            <button type="submit" class="btn-supprimer">Supprimer</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                    <p style="color:#555;">{{ d.description[:100] }}...</p>
-                </div>
-
-                <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold;">
-                        <span style="color: #d32f2f;">● {{ d.nb_soutien }} Soutiens</span>
-                        <span style="color: #28a745;">● {{ d.nb_attaque }} Attaques</span>
-                    </div>
-                    {% set total = d.nb_soutien + d.nb_attaque %}
-                    {% if total > 0 %}
-                    <div style="width: 100%; background: #eee; height: 4px; border-radius: 2px; margin-top: 5px; display: flex;">
-                        <div style="width: {{ (d.nb_soutien / total * 100) }}%; background: #d32f2f; height: 100%;"></div>
-                        <div style="width: {{ (d.nb_attaque / total * 100) }}%; background: #28a745; height: 100%;"></div>
-                    </div>
-                    {% endif %}
-                </div>
+    <!-- DÉBATS FERMÉS -->
+    <div class="section-title" style="margin-top: 50px;">🔒 Débats fermés <span style="font-size:1rem;">(gris)</span></div>
+    {% if debats_fermes %}
+        {% for d in debats_fermes %}
+        <div class="debat-card ferme">
+            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}" style="text-decoration:none; color:#2c3e50;">{{ d.titre }}</a></div>
+            <div class="debat-meta">
+                <span>📅 {{ d.date_creation.strftime('%d/%m/%Y') }}</span>
+                <span>👍 Soutien: {{ d.nb_soutien }}</span>
+                <span>⚔️ Attaque: {{ d.nb_attaque }}</span>
+                <span>👤 {{ d.createur.prenom }} {{ d.createur.nom }}</span>
+                {% if d.date_limite %}<span>⏳ Fermé le {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
+                <span class="badge gris">Fermé</span>
             </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-
-    <h2 class="section-title title-gris">Archives</h2>
-    <div class="grid">
-        {% for d in debats %}
-            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
-            {% if est_clos %}
-            <div class="card card-ferme">
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
-                        {% if user.role == 'admin' %}
-                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
-                            <button type="submit" class="btn-supprimer">Supprimer</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                    <p style="color:#777;">Ce débat est clos.</p>
-                </div>
-
-                <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold;">
-                        <span style="color: #d32f2f;">● {{ d.nb_soutien }} Soutiens</span>
-                        <span style="color: #28a745;">● {{ d.nb_attaque }} Attaques</span>
-                    </div>
-                    {% set total = d.nb_soutien + d.nb_attaque %}
-                    {% if total > 0 %}
-                    <div style="width: 100%; background: #eee; height: 4px; border-radius: 2px; margin-top: 5px; display: flex;">
-                        <div style="width: {{ (d.nb_soutien / total * 100) }}%; background: #d32f2f; height: 100%;"></div>
-                        <div style="width: {{ (d.nb_attaque / total * 100) }}%; background: #28a745; height: 100%;"></div>
-                    </div>
-                    {% endif %}
-                </div>
+            <p>{{ d.description[:120] }}...</p>
+            <div class="flex-actions">
+                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn" style="background:#7f8c8d;">Consulter (lecture seule)</a>
+                {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
+                <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+                {% endif %}
             </div>
-            {% endif %}
+        </div>
         {% endfor %}
+    {% else %}
+        <div class="empty-msg">Aucun débat fermé.</div>
+    {% endif %}
+
+    <!-- THÈMES -->
+    <div class="theme-section">
+        <h3>🏷️ Thèmes disponibles</h3>
+        <div>{% for t in themes %}<span class="theme-badge">{{ t.nom_theme }}</span>{% endfor %}</div>
+        {% if user.role == 'admin' %}
+        <hr>
+        <form method="POST" action="{{ url_for('ajouter_theme') }}" style="display:flex; gap:10px; margin-top:15px;">
+            <input type="text" name="nom_theme" placeholder="Nouveau thème" style="flex:1; padding:10px; border-radius:60px; border:1px solid #f8bbd0;">
+            <button type="submit" class="btn">Ajouter</button>
+        </form>
+        {% endif %}
     </div>
 </div>
+
+<script>
+    // Gestion du menu déroulant trois points
+    document.querySelectorAll('.dropdown button').forEach(btn => {
+        btn.onclick = function(e) {
+            var content = this.nextElementSibling;
+            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+            e.stopPropagation();
+        };
+    });
+    window.onclick = function() {
+        document.querySelectorAll('.dropdown-content').forEach(d => d.style.display = 'none');
+    };
+</script>
 </body>
 </html>
