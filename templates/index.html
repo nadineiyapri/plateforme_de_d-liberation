@@ -2,125 +2,59 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>UVoice - Accueil</title>
+    <title>UVoice - Débats universitaires</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdfdfd; margin: 0; padding: 20px; }
-        .container { max-width: 1100px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 3px solid #d32f2f; margin-bottom: 30px; }
-        h1 { color: #d32f2f; margin: 0; text-transform: uppercase; font-size: 2.5em; }
-        .btn-creer { background: #d32f2f; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; }
-        .admin-box { background: #fff5f5; padding: 25px; border-radius: 12px; border: 1px solid #d32f2f; margin-bottom: 40px; }
-        .theme-tag { background: white; padding: 5px 12px; border-radius: 6px; border: 1px solid #ddd; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-        .section-title { margin-top: 40px; font-size: 1.4em; text-transform: uppercase; border-left: 6px solid; padding-left: 15px; font-weight: bold; margin-bottom: 20px; }
-        .title-violet { color: #8e44ad; border-left-color: #8e44ad; }
-        .title-gris { color: #7f8c8d; border-left-color: #7f8c8d; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 50px; }
-        .card { padding: 25px; border-radius: 15px; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; min-height: 180px; }
-        .card-ouvert { background: #f5f0ff; border: 2px solid #8e44ad; }
-        .card-ouvert .debat-link { color: #8e44ad; text-decoration: none; font-weight: bold; font-size: 1.3em; }
-        .card-ferme { background: #f2f2f2; border: 2px solid #bdc3c7; opacity: 0.8; }
-        .card-ferme .debat-link { color: #7f8c8d; text-decoration: none; font-weight: bold; font-size: 1.3em; }
-        .btn-supprimer { background: white; color: #d32f2f; border: 1px solid #d32f2f; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .welcome-card {
+            background: rgba(255,255,255,0.96);
+            border-radius: 40px;
+            max-width: 500px;
+            width: 100%;
+            padding: 40px 35px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+        h1 { font-size: 3rem; color: #b23c1c; margin-bottom: 10px; }
+        .tagline { font-size: 1.2rem; color: #c4452c; margin-bottom: 30px; border-bottom: 2px solid #ffcdd2; display: inline-block; padding-bottom: 5px; }
+        .sub { color: #6d4c41; margin-bottom: 30px; font-size: 0.95rem; }
+        input, select {
+            width: 100%; padding: 14px 18px; margin: 12px 0;
+            border: 1px solid #ffcdd2; border-radius: 60px;
+            font-size: 1rem; background: #fffafb;
+        }
+        button {
+            background: #c4452c; color: white; border: none;
+            padding: 14px; width: 100%; border-radius: 60px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer;
+        }
+        .quote { margin-top: 30px; font-style: italic; color: #b23c1c; border-top: 1px solid #ffe0e0; padding-top: 20px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>UVoice</h1>
-        <a href="/creer_debat" class="btn-creer">+ Nouveau Débat</a>
-    </div>
-
-    {% if user.role == 'admin' %}
-    <div class="admin-box">
-        <h3 style="color:#d32f2f; margin-top:0;">Gestion des Thèmes</h3>
-        <form action="/ajouter_theme" method="POST" style="display:flex; gap:10px; margin-bottom:20px;">
-            <input type="text" name="nom_theme" placeholder="Nom du nouveau thème" required style="flex-grow:1; padding:12px; border-radius:8px; border:1px solid #ddd;">
-            <button type="submit" class="btn-creer">Ajouter</button>
-        </form>
-        <div style="display:flex; flex-wrap:wrap; gap:10px;">
-            {% for t in themes %}
-            <div class="theme-tag">
-                <strong>{{ t.nom_theme }}</strong>
-                <form action="/supprimer_theme/{{ t.id_theme }}" method="POST" style="margin:0;">
-                    <button type="submit" style="color:#d32f2f; border:none; background:none; cursor:pointer; font-size:16px; font-weight:bold;">×</button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <h2 class="section-title title-violet">Débats en cours</h2>
-    <div class="grid">
-        {% for d in debats %}
-            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
-            {% if not est_clos %}
-            <div class="card card-ouvert">
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
-                        {% if user.role == 'admin' %}
-                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
-                            <button type="submit" class="btn-supprimer">Supprimer</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                    <p style="color:#555;">{{ d.description[:100] }}...</p>
-                </div>
-
-                <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold;">
-                        <span style="color: #d32f2f;">● {{ d.nb_soutien }} Soutiens</span>
-                        <span style="color: #28a745;">● {{ d.nb_attaque }} Attaques</span>
-                    </div>
-                    {% set total = d.nb_soutien + d.nb_attaque %}
-                    {% if total > 0 %}
-                    <div style="width: 100%; background: #eee; height: 4px; border-radius: 2px; margin-top: 5px; display: flex;">
-                        <div style="width: {{ (d.nb_soutien / total * 100) }}%; background: #d32f2f; height: 100%;"></div>
-                        <div style="width: {{ (d.nb_attaque / total * 100) }}%; background: #28a745; height: 100%;"></div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-
-    <h2 class="section-title title-gris">Archives</h2>
-    <div class="grid">
-        {% for d in debats %}
-            {% set est_clos = (d.statut != 'ouvert') or (d.date_limite and maintenant > d.date_limite) %}
-            {% if est_clos %}
-            <div class="card card-ferme">
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items: flex-start;">
-                        <a href="/debat/{{ d.id_debat }}" class="debat-link">{{ d.titre }}</a>
-                        {% if user.role == 'admin' %}
-                        <form action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" method="POST">
-                            <button type="submit" class="btn-supprimer">Supprimer</button>
-                        </form>
-                        {% endif %}
-                    </div>
-                    <p style="color:#777;">Ce débat est clos.</p>
-                </div>
-
-                <div style="margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.8em; font-weight: bold;">
-                        <span style="color: #d32f2f;">● {{ d.nb_soutien }} Soutiens</span>
-                        <span style="color: #28a745;">● {{ d.nb_attaque }} Attaques</span>
-                    </div>
-                    {% set total = d.nb_soutien + d.nb_attaque %}
-                    {% if total > 0 %}
-                    <div style="width: 100%; background: #eee; height: 4px; border-radius: 2px; margin-top: 5px; display: flex;">
-                        <div style="width: {{ (d.nb_soutien / total * 100) }}%; background: #d32f2f; height: 100%;"></div>
-                        <div style="width: {{ (d.nb_attaque / total * 100) }}%; background: #28a745; height: 100%;"></div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-        {% endfor %}
-    </div>
+<div class="welcome-card">
+    <h1>🎙️ UVoice</h1>
+    <div class="tagline">Make Your Voice Heard</div>
+    <div class="sub">Plateforme de débat universitaire – argumentez, convainquez, évoluez.</div>
+    <form method="POST">
+        <input type="text" name="nom" placeholder="Nom" required>
+        <input type="text" name="prenom" placeholder="Prénom" required>
+        <select name="role">
+            <option value="etudiant">Étudiant</option>
+            <option value="prof">Professeur</option>
+            <option value="admin">Administrateur</option>
+        </select>
+        <button type="submit">🎧 Entrer dans l’arène</button>
+    </form>
+    <div class="quote">« Le débat est la forge de la pensée. »</div>
 </div>
 </body>
 </html>
