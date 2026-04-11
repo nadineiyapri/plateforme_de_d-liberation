@@ -6,146 +6,270 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; }
-        
-        #graphe-container { width: 100vw; height: 100vh; position: relative; background: white; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
+            display: flex;
+        }
+        #graphe-container { width: 100vw; height: 100vh; position: relative; background: transparent; }
         svg { width: 100%; height: 100%; display: block; }
         
-        /* Styles des liens (Fils) */
-        .link { fill: none; stroke-width: 3px; opacity: 0.6; }
-        .link-soutien { stroke: #2ecc71; } /* Vert */
-        .link-attaque { stroke: #e74c3c; stroke-dasharray: 5,5; } /* Rouge */
+        .link { fill: none; stroke-width: 3px; opacity: 0.6; transition: 0.2s; }
+        .link-soutien { stroke: #2ecc71; }
+        .link-attaque { stroke: #e74c3c; stroke-dasharray: 5,5; }
         .link-root { stroke: #bdc3c7; }
-
-        /* Styles des Noeuds (Cases) */
-        .node rect { fill: white; stroke: #ccc; rx: 10; ry: 10; cursor: pointer; transition: 0.2s; }
-        .node-root rect { fill: #2c3e50; stroke: #2c3e50; }
-        .node text { font-size: 11px; fill: #333; pointer-events: none; text-anchor: middle; }
-        .node-root text { fill: white !important; font-weight: bold; }
-        .node .stats { font-size: 10px; fill: #7f8c8d; }
-
-        /* Panneau latéral */
-        #panneau { 
-            display: none; position: fixed; right: 20px; top: 20px; width: 330px; 
-            background: white; padding: 25px; border-radius: 15px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15); z-index: 1000; border: 1px solid #ddd; 
-        }
         
+        .node { cursor: pointer; transition: filter 0.2s; }
+        .node:hover { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
+        .node rect { fill: white; stroke: #bdc3c7; stroke-width: 2px; rx: 10; ry: 10; transition: all 0.2s; }
+        .node-root rect { fill: #2c3e50; stroke: #2c3e50; }
+        .node text { font-size: 11px; fill: #2c3e50; pointer-events: none; text-anchor: middle; font-weight: 500; }
+        .node-root text { fill: white !important; font-weight: bold; font-size: 13px; }
+        .node .stats { font-size: 10px; fill: #7f8c8d; }
+        .node .badge-type { font-size: 9px; font-weight: bold; }
+        
+        #panneau {
+            display: none; position: fixed; right: 20px; top: 20px; width: 350px; max-height: 90vh;
+            background: rgba(255,255,255,0.98); padding: 25px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            z-index: 1000; border: 1px solid #f8bbd0; overflow-y: auto; animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
         .vote-bar { display: flex; gap: 10px; margin: 15px 0; }
-        .btn-v { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-v { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.1s; }
         .btn-like { background: #2ecc71; }
         .btn-dislike { background: #e74c3c; }
-        
-        textarea { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: none; margin-bottom: 10px; }
-        .btn-send { width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
-        .badge-clos { position: absolute; top: 80px; left: 20px; background: #e74c3c; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .btn-v:active { transform: scale(0.97); }
+        textarea { width: 100%; height: 80px; border: 1px solid #f8bbd0; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; font-family: inherit; }
+        .btn-send { width: 100%; background: #c4452c; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .badge-clos { position: fixed; top: 80px; left: 20px; background: #e74c3c; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 100; }
+        .controls { position: fixed; bottom: 20px; left: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 100; display: flex; gap: 10px; }
+        .controls button { background: #c4452c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .info-tooltip { position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; pointer-events: none; z-index: 1000; white-space: nowrap; }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px 20px; border-radius: 30px; font-size: 14px; z-index: 2000; animation: fadeOut 2s forwards; }
+        @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
     </style>
 </head>
 <body>
-
 <div id="graphe-container">
-    <div style="position:absolute; top:20px; left:20px; z-index:10;">
-        <a href="{{ url_for('accueil') }}" style="text-decoration:none; color:#3498db; font-weight:bold;">← Accueil</a>
-        <h2 style="margin:5px 0; color: #2c3e50;">{{ debat.titre }}</h2>
-    </div>
-
-    {% if est_clos %}
-    <div class="badge-clos">🔒 Débat Clos</div>
-    {% endif %}
-
-    <svg id="graphe"></svg>
-
-    <div id="panneau">
-        <h4 style="margin:0 0 10px 0; color:#7f8c8d;">Argument sélectionné :</h4>
-        <p id="full-text" style="background:#f8f9fa; padding:12px; border-radius:8px; font-size:13px; color:#2c3e50; line-height: 1.4;"></p>
-        
-        <div class="vote-bar" id="vote-controls">
-            <form id="form-like" method="POST"><button type="submit" class="btn-v btn-like">👍 Like</button></form>
-            <form id="form-dislike" method="POST"><button type="submit" class="btn-v btn-dislike">👎 Dislike</button></form>
+    <div style="position:fixed; top:20px; left:20px; z-index:100; background: rgba(255,255,255,0.9); padding: 10px 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+        <a href="{{ url_for('accueil') }}" style="text-decoration:none; color:#c4452c;">← Accueil</a>
+        <h2 style="margin:5px 0 0 0; font-size:18px;">{{ debat.titre }}</h2>
+        <div style="font-size:12px; color:#6d4c41;">
+            👤 {{ debat.createur.prenom }} {{ debat.createur.nom }} |
+            {% if debat.date_limite %} ⏰ Limite: {{ debat.date_limite.strftime('%d/%m/%Y') }}{% endif %}
         </div>
-
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-
+    </div>
+    {% if est_clos %}<div class="badge-clos">🔒 Débat Clos</div>{% endif %}
+    <div class="controls">
+        <button onclick="resetView()">🔄 Réinitialiser</button>
+        <button onclick="exportGraph()">📸 Exporter SVG</button>
+    </div>
+    <svg id="graphe"></svg>
+    <div id="panneau">
+        <div style="display: flex; justify-content: space-between;">
+            <h4 style="margin:0;">💬 Détails</h4>
+            <button onclick="document.getElementById('panneau').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="argument-metadata" style="font-size:12px; color:#7f8c8d; margin:10px 0;"></div>
+        <p id="full-text" style="background:#f8f9fa; padding:12px; border-radius:8px;"></p>
+        <div class="vote-bar" id="vote-controls" style="display:none;">
+            <button id="like-btn" class="btn-v btn-like">👍 Like</button>
+            <button id="dislike-btn" class="btn-v btn-dislike">👎 Dislike</button>
+        </div>
+        <hr>
         {% if not est_clos %}
-        <h4 style="margin:0 0 10px 0;">Répondre</h4>
-        <form method="POST">
+        <h4>✏️ Répondre</h4>
+        <form method="POST" onsubmit="return validateForm(this)">
             <input type="hidden" name="id_parent" id="input-parent">
-            <textarea name="texte" placeholder="Votre réponse..." required></textarea>
-            <select name="type_arg" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; border:1px solid #ddd;">
-                <option value="soutien">🚩 Soutien (Lien Vert)</option>
-                <option value="attaque">⚔️ Attaque (Lien Rouge)</option>
+            <textarea name="texte" placeholder="Votre réponse..." required minlength="3"></textarea>
+            <select name="type_arg" style="width:100%; padding:10px; margin-bottom:15px;">
+                <option value="soutien" style="color:#2ecc71;">🌿 Soutien (lien vert)</option>
+                <option value="attaque" style="color:#e74c3c;">⚡ Attaque (lien rouge)</option>
             </select>
-            <button type="submit" class="btn-send">Publier l'argument</button>
+            <button type="submit" class="btn-send">Publier</button>
         </form>
+        {% else %}
+        <div style="background:#f8f9fa; padding:15px; text-align:center; border-radius:8px;">🔒 Débat clos</div>
         {% endif %}
-        
-        <button type="button" style="width:100%; background:none; border:none; color:#999; margin-top:10px; cursor:pointer;" onclick="document.getElementById('panneau').style.display='none'">Fermer</button>
     </div>
 </div>
 
 <script id="arbre-json" type="application/json">{{ arbre | tojson }}</script>
-
 <script>
     const treeData = JSON.parse(document.getElementById('arbre-json').textContent);
     const svg = d3.select("#graphe");
     const container = document.getElementById('graphe-container');
     const width = container.clientWidth, height = container.clientHeight;
-
     const mainGroup = svg.append("g");
-
-    // Zoom & Pan
-    const zoomBehavior = d3.zoom()
-        .scaleExtent([0.1, 3])
-        .on("zoom", (event) => mainGroup.attr("transform", event.transform));
+    const zoomBehavior = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => mainGroup.attr("transform", event.transform));
     svg.call(zoomBehavior);
 
-    const root = d3.hierarchy(treeData);
-    const treeLayout = d3.tree().nodeSize([120, 300]); 
+    let root = d3.hierarchy(treeData);
+    const treeLayout = d3.tree().nodeSize([140, 350]);
     treeLayout(root);
 
-    // 1. DESSIN DES LIENS (FILS)
-    mainGroup.selectAll(".link")
-        .data(root.links())
-        .enter().append("path")
-        .attr("class", d => `link ${d.target.data.type === 'soutien' ? 'link-soutien' : d.target.data.type === 'attaque' ? 'link-attaque' : 'link-root'}`)
-        .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+    // Fonction pour afficher un petit message temporaire
+    function showMessage(msg, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = msg;
+        toast.style.background = isError ? '#e74c3c' : '#2ecc71';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
 
-    // 2. DESSIN DES NOEUDS (CASES)
-    const nodes = mainGroup.selectAll(".node")
-        .data(root.descendants())
-        .enter().append("g")
-        .attr("class", d => "node " + (d.data.id === "root" ? "node-root" : ""))
-        .attr("transform", d => `translate(${d.y},${d.x})`)
-        .on("click", (event, d) => {
-            event.stopPropagation();
-            const isRoot = d.data.id === "root";
-            
-            document.getElementById('full-text').innerText = d.data.texte;
-            document.getElementById('input-parent').value = isRoot ? "root" : d.data.id;
-            
-            if(!isRoot) {
-                document.getElementById('vote-controls').style.display = 'flex';
-                document.getElementById('form-like').action = `/vote_argument/${d.data.id}/1`;
-                document.getElementById('form-dislike').action = `/vote_argument/${d.data.id}/-1`;
+    // Fonction de vote AJAX
+    async function vote(argumentId, valeur) {
+        try {
+            const response = await fetch(`/vote_argument/${argumentId}/${valeur}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                showMessage(`Vote enregistré !`, false);
+                // Optionnel : recharger l'arbre ou mettre à jour le score localement
+                // Pour simplifier, on recharge la page ? Non, on va juste rafraîchir les forces via l'API
+                fetchForcesAndUpdate();
+            } else if (response.status === 404) {
+                showMessage(`Erreur 404 : la route n'existe pas. Vérifiez le serveur.`, true);
             } else {
-                document.getElementById('vote-controls').style.display = 'none';
+                const text = await response.text();
+                showMessage(`Erreur : ${response.status}`, true);
+                console.error(text);
             }
-            document.getElementById('panneau').style.display = 'block';
-        });
+        } catch (err) {
+            showMessage(`Erreur réseau : ${err.message}`, true);
+            console.error(err);
+        }
+    }
 
-    nodes.append("rect").attr("x", -100).attr("y", -35).attr("width", 200).attr("height", 70);
+    // Récupère les forces BH et met à jour l'arbre
+    async function fetchForcesAndUpdate() {
+        try {
+            const resp = await fetch(`/api/debat/{{ debat.id_debat }}/forces`);
+            if (!resp.ok) return;
+            const forces = await resp.json();
+            function updateNode(node) {
+                if (node.data.id !== "root" && forces[node.data.id] !== undefined) {
+                    node.data.force_bh = forces[node.data.id];
+                }
+                if (node.children) node.children.forEach(updateNode);
+            }
+            updateNode(root);
+            updateGraph();
+        } catch(e) { console.warn(e); }
+    }
 
-    nodes.append("text").attr("dy", -5)
-        .text(d => d.data.texte.length > 25 ? d.data.texte.substring(0, 22) + "..." : d.data.texte);
+    function updateGraph() {
+        const links = mainGroup.selectAll(".link").data(root.links());
+        links.exit().remove();
+        links.enter().append("path")
+            .attr("class", d => `link ${d.target.data.type === 'soutien' ? 'link-soutien' : d.target.data.type === 'attaque' ? 'link-attaque' : 'link-root'}`)
+            .merge(links)
+            .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
 
-    nodes.append("text").attr("class", "stats").attr("dy", 15)
-        .text(d => d.data.id === "root" ? "" : `Score: ${d.data.score || 0}`);
+        const nodes = mainGroup.selectAll(".node").data(root.descendants());
+        nodes.exit().remove();
+        const newNodes = nodes.enter().append("g")
+            .attr("class", d => `node ${d.data.id === "root" ? "node-root" : ""}`)
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .on("click", (event, d) => { event.stopPropagation(); showDetails(d); })
+            .on("mouseenter", (event, d) => { if(d.data.id !== "root") showTooltip(event, d); })
+            .on("mouseleave", hideTooltip);
 
-    const initialTransform = d3.zoomIdentity.translate(150, height / 2).scale(0.8);
-    svg.call(zoomBehavior.transform, initialTransform);
+        newNodes.append("rect")
+            .attr("x", -110).attr("y", -40).attr("width", 220).attr("height", 80).attr("rx", 10)
+            .style("fill", d => {
+                if(d.data.id === "root") return "#2c3e50";
+                const force = d.data.force_bh || 0;
+                const intensite = Math.floor(force * 255);
+                return `rgb(${255 - intensite}, ${intensite}, 100)`;
+            });
 
-    svg.on("click", () => document.getElementById('panneau').style.display = 'none');
+        newNodes.append("text").attr("dy", -10)
+            .text(d => d.data.texte.length > 30 ? d.data.texte.substring(0,27)+"..." : d.data.texte);
+        newNodes.append("text").attr("class", "stats").attr("dy", 15)
+            .text(d => d.data.id === "root" ? "" : `Force BH: ${d.data.force_bh.toFixed(3)}`);
+        
+        newNodes.append("text").attr("class", "badge-type").attr("dy", 30).attr("x", 0)
+            .text(d => {
+                if(d.data.id === "root") return "🎯 DÉBAT";
+                return d.data.type === "soutien" ? "✓ SOUTIENT" : "⚡ ATTAQUE";
+            })
+            .attr("fill", d => {
+                if(d.data.id === "root") return "white";
+                return d.data.type === "soutien" ? "#2ecc71" : "#e74c3c";
+            })
+            .attr("font-size", "9px").attr("font-weight", "bold");
+            
+        nodes.merge(newNodes);
+    }
+
+    let currentArgumentId = null;
+
+    function showDetails(d) {
+        const isRoot = d.data.id === "root";
+        document.getElementById('full-text').innerHTML = d.data.texte;
+        const meta = document.getElementById('argument-metadata');
+        if(!isRoot) {
+            const typeColor = d.data.type === 'soutien' ? '#2ecc71' : '#e74c3c';
+            meta.innerHTML = `
+                👤 ${d.data.auteur}<br>
+                📅 ${d.data.date}<br>
+                🏷️ Type: <span style="color:${typeColor}; font-weight:bold;">${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}</span><br>
+                ⚖️ Force BH: ${d.data.force_bh}
+            `;
+            currentArgumentId = d.data.id;
+            document.getElementById('input-parent').value = d.data.id;
+            const voteDiv = document.getElementById('vote-controls');
+            voteDiv.style.display = 'flex';
+        } else {
+            meta.innerHTML = '';
+            document.getElementById('input-parent').value = "root";
+            document.getElementById('vote-controls').style.display = 'none';
+            currentArgumentId = null;
+        }
+        document.getElementById('panneau').style.display = 'block';
+    }
+
+    // Gestion des clics sur les boutons Like / Dislike
+    document.getElementById('like-btn')?.addEventListener('click', () => {
+        if (currentArgumentId) vote(currentArgumentId, 1);
+        else showMessage("Aucun argument sélectionné", true);
+    });
+    document.getElementById('dislike-btn')?.addEventListener('click', () => {
+        if (currentArgumentId) vote(currentArgumentId, -1);
+        else showMessage("Aucun argument sélectionné", true);
+    });
+
+    let tooltip = null;
+    function showTooltip(event, d) {
+        if(!tooltip) tooltip = d3.select("body").append("div").attr("class","info-tooltip").style("opacity",0);
+        tooltip.html(`Force BH: ${d.data.force_bh}<br>Type: ${d.data.type === 'soutien' ? 'Soutien (vert)' : 'Attaque (rouge)'}`)
+            .style("left", (event.pageX+10)+"px").style("top", (event.pageY-10)+"px").style("opacity",1);
+    }
+    function hideTooltip() { if(tooltip) tooltip.style("opacity",0); }
+    function validateForm(form) { if(form.texte.value.trim().length<3) { alert("Minimum 3 caractères"); return false; } return true; }
+    function resetView() { const init = d3.zoomIdentity.translate(200, height/2).scale(0.7); svg.transition().duration(500).call(zoomBehavior.transform, init); }
+    function exportGraph() {
+        const serializer = new XMLSerializer();
+        let source = serializer.serializeToString(document.getElementById('graphe'));
+        source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+        const link = document.createElement("a");
+        link.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+        link.download = "graphe.svg";
+        link.click();
+    }
+    updateGraph();
+    resetView();
+    svg.on("click", () => { document.getElementById('panneau').style.display='none'; hideTooltip(); });
+    window.addEventListener('resize', () => { svg.attr("width", container.clientWidth).attr("height", container.clientHeight); updateGraph(); });
+    
+    // Rafraîchissement périodique des forces
+    setInterval(fetchForcesAndUpdate, 30000);
 </script>
 </body>
 </html>
