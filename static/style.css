@@ -1,32 +1,46 @@
-body{
-    background: repeating-linear-gradient(45deg,
-    #fff,
-    #ffbd3a 25px,
-    #4a7aff 25px,
-    #e05952 25px
-    );
+body {
+    /* Ton dégradé était un peu cassé, voici une version propre */
+    background: repeating-linear-gradient(45deg, #fff, #fff 10px, #ffbd3a 10px, #ffbd3a 20px);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
-.signup{
+
+.signup {
     background-color: brown;
     position: absolute;
     top: 8px;
     right: 16px;
     font-size: 20px;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    z-index: 100; /* Pour rester au dessus du graphe */
 }
-h1{
-    font-size: 100px;
-    position: absolute;
-    top: 10%;
-    width: 100%;
-    text-align: center;
-    color: brown;
-}
-h2{
-    font-size: 30px;
-    position: absolute;
-    top: 30%;
-    width: 100%;
-    text-align: center;
-    color: brown;
-    }
 
+h1 {
+    font-size: 50px; /* 100px c'est énorme, ça risque de cacher le graphe */
+    position: relative; /* Change absolute en relative pour ne pas écraser le graphe */
+    margin-top: 50px;
+    width: 100%;
+    text-align: center;
+    color: brown;
+}
+
+/* CORRECTION ICI : Ajout du # et de la visibilité */
+#graphe-container {
+    background-color: rgba(240, 240, 240, 0.9) !important; 
+    min-height: 80vh !important; /* Prend 80% de la hauteur de l'écran */
+    width: 100% !important;
+    border: 5px solid red !important; /* Gros bord rouge pour le test */
+    display: block !important;
+    position: relative;
+    z-index: 1;
+}
+
+svg#graphe {
+    width: 100%;
+    height: 100%;
+    min-height: 600px;
+}
