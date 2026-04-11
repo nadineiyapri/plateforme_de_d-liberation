@@ -5,178 +5,147 @@
     <title>UVoice - {{ debat.titre }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #fdfdfd; overflow: hidden; }
-        #graphe-container { flex-grow: 1; position: relative; width: 100%; height: 100%; }
-        svg { width: 100%; height: 100%; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; }
+        
+        #graphe-container { width: 100vw; height: 100vh; position: relative; background: white; }
+        svg { width: 100%; height: 100%; display: block; }
+        
+        /* Styles des liens (Fils) */
+        .link { fill: none; stroke-width: 3px; opacity: 0.6; }
+        .link-soutien { stroke: #2ecc71; } /* Vert */
+        .link-attaque { stroke: #e74c3c; stroke-dasharray: 5,5; } /* Rouge */
+        .link-root { stroke: #bdc3c7; }
+
+        /* Styles des Noeuds (Cases) */
+        .node rect { fill: white; stroke: #ccc; rx: 10; ry: 10; cursor: pointer; transition: 0.2s; }
+        .node-root rect { fill: #2c3e50; stroke: #2c3e50; }
+        .node text { font-size: 11px; fill: #333; pointer-events: none; text-anchor: middle; }
+        .node-root text { fill: white !important; font-weight: bold; }
+        .node .stats { font-size: 10px; fill: #7f8c8d; }
 
         /* Panneau latéral */
         #panneau { 
-            display: none; position: fixed; right: 20px; top: 20px; width: 320px; 
+            display: none; position: fixed; right: 20px; top: 20px; width: 330px; 
             background: white; padding: 25px; border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #eee; z-index: 1000; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); z-index: 1000; border: 1px solid #ddd; 
         }
-
-        .score-badge {
-            background: #f8f9fa; padding: 12px; border-radius: 10px; margin: 15px 0;
-            text-align: center; border-left: 5px solid #8e44ad;
-        }
-
-        .barre-fond { width: 100%; background: #eee; height: 8px; border-radius: 4px; margin-top: 8px; overflow: hidden; }
-        .barre-force { height: 100%; background: #8e44ad; transition: width 0.5s ease; }
-
-        /* Zone de Vote */
-        .vote-section { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; padding: 10px; border-top: 1px solid #eee; }
-        .btn-vote { border: none; background: #f1f1f1; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 1.1em; transition: 0.2s; }
-        .btn-vote:hover { background: #e0e0e0; transform: scale(1.1); }
-
-        textarea { width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ddd; resize: none; box-sizing: border-box; font-family: inherit; }
-        .btn-submit { width: 100%; padding: 12px; background: #d32f2f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         
-        #verdict-box {
-            position: absolute; bottom: 20px; left: 20px; background: #fff3cd; 
-            padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; max-width: 300px; font-size: 0.9em; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        .vote-bar { display: flex; gap: 10px; margin: 15px 0; }
+        .btn-v { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn-like { background: #2ecc71; }
+        .btn-dislike { background: #e74c3c; }
+        
+        textarea { width: 100%; height: 80px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: none; margin-bottom: 10px; }
+        .btn-send { width: 100%; background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .badge-clos { position: absolute; top: 80px; left: 20px; background: #e74c3c; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="graphe-container">
     <div style="position:absolute; top:20px; left:20px; z-index:10;">
-        <a href="/accueil" style="text-decoration:none; color:#d32f2f; font-weight:bold; background: white; padding: 5px 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">← Retour Accueil</a>
-        <h2 style="margin:15px 0; color: #333; text-shadow: 1px 1px 2px white;">{{ debat.titre }}</h2>
+        <a href="{{ url_for('accueil') }}" style="text-decoration:none; color:#3498db; font-weight:bold;">← Accueil</a>
+        <h2 style="margin:5px 0; color: #2c3e50;">{{ debat.titre }}</h2>
     </div>
 
-    {% if argument_dominant %}
-    <div id="verdict-box">
-        <strong>⚖️ Analyse de délibération :</strong><br>
-        L'argument le plus probant est : <br>
-        <i style="color: #856404;">"{{ argument_dominant.texte[:80] }}..."</i>
-        <div style="margin-top:5px; font-weight: bold; color: #8e44ad;">Force : {{ (argument_dominant.score_v * 100)|int }}%</div>
-    </div>
+    {% if est_clos %}
+    <div class="badge-clos">🔒 Débat Clos</div>
     {% endif %}
-    
+
     <svg id="graphe"></svg>
 
     <div id="panneau">
-        <h3 id="panneau-titre" style="color:#333; margin-top:0; font-size: 1.2em;">Détails de l'argument</h3>
+        <h4 style="margin:0 0 10px 0; color:#7f8c8d;">Argument sélectionné :</h4>
+        <p id="full-text" style="background:#f8f9fa; padding:12px; border-radius:8px; font-size:13px; color:#2c3e50; line-height: 1.4;"></p>
         
-        <div id="zone-score" style="display:none;">
-            <div class="score-badge">
-                <small>Fiabilité (Besnard & Hunter)</small><br>
-                <strong><span id="valeur-v">1.0</span> / 1.0</strong>
-                <div class="barre-fond"><div id="barre-v" class="barre-force"></div></div>
-            </div>
+        <div class="vote-bar" id="vote-controls">
+            <form id="form-like" method="POST"><button type="submit" class="btn-v btn-like">👍 Like</button></form>
+            <form id="form-dislike" method="POST"><button type="submit" class="btn-v btn-dislike">👎 Dislike</button></form>
         </div>
 
-        <div id="zone-vote" style="display:none;">
-            <div class="vote-section">
-                <form id="form-like" method="POST" style="display:inline;">
-                    <button type="submit" class="btn-vote">👍 <span id="count-likes">0</span></button>
-                </form>
-                <form id="form-dislike" method="POST" style="display:inline;">
-                    <button type="submit" class="btn-vote">👎</button>
-                </form>
-            </div>
-        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
 
-        <form method="POST" action="/debat/{{ debat.id_debat }}">
+        {% if not est_clos %}
+        <h4 style="margin:0 0 10px 0;">Répondre</h4>
+        <form method="POST">
             <input type="hidden" name="id_parent" id="input-parent">
-            <p style="font-size: 0.8em; font-weight: bold; margin-bottom: 5px;">RÉPONDRE :</p>
-            <textarea name="texte" placeholder="Votre argument ici..." required></textarea>
-            
-            <label style="display:block; margin-top:10px; font-size:12px; font-weight: bold;">TYPE D'INTERVENTION :</label>
-            <select name="type_arg" style="width:100%; padding:10px; border-radius:6px; margin-top:5px; border: 1px solid #ddd; background: white;">
-                <option value="soutien" style="color: #d32f2f;">🚩 Soutien (Rouge)</option>
-                <option value="attaque" style="color: #28a745;">⚔️ Attaque (Vert)</option>
+            <textarea name="texte" placeholder="Votre réponse..." required></textarea>
+            <select name="type_arg" style="width:100%; padding:10px; border-radius:8px; margin-bottom:15px; border:1px solid #ddd;">
+                <option value="soutien">🚩 Soutien (Lien Vert)</option>
+                <option value="attaque">⚔️ Attaque (Lien Rouge)</option>
             </select>
-            
-            <button type="submit" class="btn-submit">Publier la réponse</button>
-            <button type="button" onclick="document.getElementById('panneau').style.display='none'" style="width:100%; background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Fermer</button>
+            <button type="submit" class="btn-send">Publier l'argument</button>
         </form>
+        {% endif %}
+        
+        <button type="button" style="width:100%; background:none; border:none; color:#999; margin-top:10px; cursor:pointer;" onclick="document.getElementById('panneau').style.display='none'">Fermer</button>
     </div>
 </div>
 
 <script id="arbre-json" type="application/json">{{ arbre | tojson }}</script>
 
 <script>
-    const data = JSON.parse(document.getElementById('arbre-json').textContent);
+    const treeData = JSON.parse(document.getElementById('arbre-json').textContent);
     const svg = d3.select("#graphe");
     const container = document.getElementById('graphe-container');
     const width = container.clientWidth, height = container.clientHeight;
 
-    const zoomGroup = svg.append("g");
-    svg.call(d3.zoom().on("zoom", (event) => zoomGroup.attr("transform", event.transform)));
+    const mainGroup = svg.append("g");
 
-    const root = d3.hierarchy(data);
+    // Zoom & Pan
+    const zoomBehavior = d3.zoom()
+        .scaleExtent([0.1, 3])
+        .on("zoom", (event) => mainGroup.attr("transform", event.transform));
+    svg.call(zoomBehavior);
+
+    const root = d3.hierarchy(treeData);
     const treeLayout = d3.tree().nodeSize([120, 300]); 
     treeLayout(root);
 
-    const g = zoomGroup.append("g").attr("transform", `translate(200, ${height/2})`);
-
-    // --- FILAMENT (LIENS) COLORÉS ---
-    g.selectAll(".link")
+    // 1. DESSIN DES LIENS (FILS)
+    mainGroup.selectAll(".link")
         .data(root.links())
         .enter().append("path")
-        .attr("class", "link")
-        .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-        .attr("fill", "none")
-        .attr("stroke", d => {
-            // Le fil prend la couleur de l'argument cible
-            if (d.target.data.type === "soutien") return "#28a745"; // Vert
-            if (d.target.data.type === "attaque") return "#d32f2f"; // Rouge
-            return "#ccc"; // Gris pour la racine
-        })
-        .attr("stroke-width", 3)
-        .style("opacity", 0.6);
+        .attr("class", d => `link ${d.target.data.type === 'soutien' ? 'link-soutien' : d.target.data.type === 'attaque' ? 'link-attaque' : 'link-root'}`)
+        .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
 
-    // --- NOEUDS (CASES ARGUMENTS) ---
-    const node = g.selectAll(".node")
+    // 2. DESSIN DES NOEUDS (CASES)
+    const nodes = mainGroup.selectAll(".node")
         .data(root.descendants())
         .enter().append("g")
+        .attr("class", d => "node " + (d.data.id === "root" ? "node-root" : ""))
         .attr("transform", d => `translate(${d.y},${d.x})`)
         .on("click", (event, d) => {
+            event.stopPropagation();
             const isRoot = d.data.id === "root";
+            
+            document.getElementById('full-text').innerText = d.data.texte;
             document.getElementById('input-parent').value = isRoot ? "root" : d.data.id;
             
             if(!isRoot) {
-                document.getElementById('zone-vote').style.display = "block";
-                document.getElementById('count-likes').innerText = d.data.likes;
-                // URLs dynamiques pour les boutons de vote
-                document.getElementById('form-like').action = `/argument/${d.data.id}/vote/like`;
-                document.getElementById('form-dislike').action = `/argument/${d.data.id}/vote/dislike`;
+                document.getElementById('vote-controls').style.display = 'flex';
+                document.getElementById('form-like').action = `/vote_argument/${d.data.id}/1`;
+                document.getElementById('form-dislike').action = `/vote_argument/${d.data.id}/-1`;
+            } else {
+                document.getElementById('vote-controls').style.display = 'none';
             }
             document.getElementById('panneau').style.display = 'block';
-            event.stopPropagation();
         });
 
-    // Dessin du rectangle (Case)
-    node.append("rect")
-        .attr("width", 220).attr("height", 80).attr("x", -110).attr("y", -40).attr("rx", 10)
-        .attr("fill", d => {
-            if (d.data.id === "root") return "#2c3e50"; // Racine (Sombre)
-            return d.data.type === "soutien" ? "#28a745" : "#d32f2f";
-        })
-        .attr("stroke", "#fff").attr("stroke-width", 2);
+    nodes.append("rect").attr("x", -100).attr("y", -35).attr("width", 200).attr("height", 70);
 
-    // Texte de l'argument (tronqué)
-    node.append("text")
-        .attr("dy", -10).attr("text-anchor", "middle")
-        .style("fill", "white").style("font-weight", "bold").style("font-size", "11px")
-        .text(d => d.data.texte.substring(0, 30) + (d.data.texte.length > 30 ? "..." : ""));
+    nodes.append("text").attr("dy", -5)
+        .text(d => d.data.texte.length > 25 ? d.data.texte.substring(0, 22) + "..." : d.data.texte);
 
-    // Affichage des Likes/Dislikes et Force sur la case
-    node.append("text")
-        .attr("dy", 15).attr("text-anchor", "middle")
-        .style("fill", "rgba(255,255,255,0.9)").style("font-size", "10px")
-        .text(d => d.data.id === "root" ? "DEBAT CENTRAL" : 
-              `👍 ${d.data.likes || 0}  |  ⚖️ Force: ${Math.round(d.data.score_v * 100)}%`);
+    nodes.append("text").attr("class", "stats").attr("dy", 15)
+        .text(d => d.data.id === "root" ? "" : `Score: ${d.data.score || 0}`);
 
-    // Mention du type en petit sous la case
-    node.append("text")
-        .attr("dy", 30).attr("text-anchor", "middle")
-        .style("fill", "white").style("font-size", "9px").style("text-transform", "uppercase")
-        .text(d => d.data.id === "root" ? "" : d.data.type);
+    const initialTransform = d3.zoomIdentity.translate(150, height / 2).scale(0.8);
+    svg.call(zoomBehavior.transform, initialTransform);
 
+    svg.on("click", () => document.getElementById('panneau').style.display = 'none');
 </script>
 </body>
 </html>
