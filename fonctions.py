@@ -215,3 +215,24 @@ def est_temps_ecoule(id_debat):
     
     # On compare maintenant avec la date limite
     return datetime.utcnow() > debat.date_limite
+
+def calculer_scores_besnard_hunter(id_debat):
+    args = Argument.query.filter_by(id_debat=id_debat).all()
+    
+    # On initialise v(a) = 1 pour tout le monde au début
+    for a in args:
+        a.score_v = 1.0
+        
+    # On itère quelques fois pour stabiliser les valeurs (Convergence)
+    for _ in range(5): 
+        for a in args:
+            # On récupère uniquement les enfants qui sont des "attaques" (Vert)
+            attaquants = [e for e in a.enfants if e.type_arg == 'attaque']
+            
+            # Somme des scores des attaquants
+            somme_attaques = sum([att.score_v for att in attaquants])
+            
+            # Application de la formule de Besnard & Hunter
+            a.score_v = 1 / (1 + somme_attaques)
+            
+    db.session.commit()
