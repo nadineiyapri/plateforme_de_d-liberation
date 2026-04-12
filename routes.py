@@ -1,13 +1,21 @@
 from flask import render_template, request, redirect, url_for, session, jsonify, flash
-from models import app, db, User, Theme, Debat, Argument, VoteArgument, Vote
+from models import app, db, User, Theme, Debat, Argument, EvaluationArgument, FavoriArgument, Vote
 from datetime import datetime
 import functools
 
-# ------------------ Fonction Besnard & Hunter ------------------
+
 def calculer_forces_besnard_hunter(id_debat, max_iter=100, epsilon=1e-6):
     arguments = Argument.query.filter_by(id_debat=id_debat).all()
     if not arguments:
         return {}
+    w = {}
+    for arg in arguments:
+        evaluations = EvaluationArgument.query.filter_by(id_argument=arg.id_argument).all()
+        if evaluations:
+            moyenne = sum(e.note for e in evaluations) / len(evaluations)
+            w[arg.id_argument] = moyenne / 4.0
+        else:
+            w[arg.id_argument] = 0.5
     attaquants = {arg.id_argument: [] for arg in arguments}
     for arg in arguments:
         for enfant in arg.enfants:
@@ -17,33 +25,35 @@ def calculer_forces_besnard_hunter(id_debat, max_iter=100, epsilon=1e-6):
     for _ in range(max_iter):
         v_new = {}
         diff_max = 0.0
-        for arg_id, att_list in attaquants.items():
-            somme = sum(v.get(attaquant_id, 0) for attaquant_id in att_list)
-            v_new[arg_id] = 1.0 / (1.0 + somme)
+        for arg_id in v:
+            somme_attaques = sum(v.get(attaquant_id, 0) for attaquant_id in attaquants[arg_id])
+            v_new[arg_id] = w[arg_id] / (1 + somme_attaques)
             diff_max = max(diff_max, abs(v_new[arg_id] - v[arg_id]))
         v = v_new
         if diff_max < epsilon:
             break
     return v
 
-def construire_arbre(id_debat):
+def construire_arbre(id_debat, user_id, user_role):
     debat = Debat.query.get(id_debat)
     if not debat:
         return None
     forces = calculer_forces_besnard_hunter(id_debat)
+    favoris_ids = {f.id_argument for f in FavoriArgument.query.filter_by(id_user=user_id).all()}
     tous_arguments = Argument.query.filter_by(id_debat=id_debat).all()
     def noeud(arg):
-        score_classique = sum(v.valeur for v in arg.votes_recus)
         force_bh = forces.get(arg.id_argument, 0.5)
         enfants = [e for e in tous_arguments if e.id_parent == arg.id_argument]
+        peut_supprimer = (user_id == arg.id_auteur) or (user_role in ['admin', 'prof'])
         return {
             "id": arg.id_argument,
             "texte": arg.texte,
             "type": arg.type_arg,
-            "score": score_classique,
             "force_bh": round(force_bh, 3),
             "auteur": f"{arg.auteur.prenom} {arg.auteur.nom}",
             "date": arg.date_creation.strftime("%d/%m/%Y %H:%M"),
+            "est_favori": arg.id_argument in favoris_ids,
+            "peut_supprimer": peut_supprimer,
             "children": [noeud(e) for e in enfants]
         }
     racines = [arg for arg in tous_arguments if arg.id_parent is None]
@@ -51,12 +61,22 @@ def construire_arbre(id_debat):
         "id": "root",
         "texte": debat.titre,
         "type": "debat",
-        "score": 0,
         "force_bh": None,
+        "est_favori": False,
+        "peut_supprimer": False,
         "children": [noeud(r) for r in racines]
     }
 
-# ------------------ Routes ------------------
+
+def login_required(f):
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("user_id"):
+            flash("Veuillez vous identifier", "warning")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -73,11 +93,9 @@ def index():
     return render_template("index.html")
 
 @app.route("/accueil")
+@login_required
 def accueil():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     maintenant = datetime.now()
     tous_les_debats = Debat.query.all()
     debats_ouverts = []
@@ -98,11 +116,9 @@ def accueil():
                            debats_fermes=debats_fermes, themes=themes, maintenant=maintenant)
 
 @app.route("/creer_debat", methods=["GET", "POST"])
+@login_required
 def creer_debat():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     themes = Theme.query.all()
     if request.method == "POST":
         titre = request.form.get("titre")
@@ -127,11 +143,9 @@ def creer_debat():
     return render_template("creer_debat.html", user=user, themes=themes)
 
 @app.route("/debat/<int:id_debat>", methods=["GET", "POST"])
+@login_required
 def debat(id_debat):
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     debat_obj = Debat.query.get_or_404(id_debat)
     maintenant = datetime.now()
     est_clos_par_temps = (debat_obj.date_limite and maintenant > debat_obj.date_limite)
@@ -154,34 +168,55 @@ def debat(id_debat):
         flash("Argument ajouté", "success")
         return redirect(url_for("debat", id_debat=id_debat))
 
-    arbre = construire_arbre(id_debat)
+    arbre = construire_arbre(id_debat, user.iduser, user.role)
     return render_template("debat.html", user=user, debat=debat_obj,
                            arbre=arbre, maintenant=maintenant, est_clos=est_ferme)
 
-@app.route("/vote_argument/<int:id_argument>/<int:valeur>", methods=["POST"])
-def vote_arg(id_argument, valeur):
+@app.route("/evaluer_argument/<int:id_argument>", methods=["POST"])
+@login_required
+def evaluer_argument(id_argument):
     user_id = session.get("user_id")
-    if not user_id:
-        return "Non connecté", 401
-    vote_existant = VoteArgument.query.filter_by(id_user=user_id, id_argument=id_argument).first()
-    if vote_existant:
-        if vote_existant.valeur == valeur:
-            db.session.delete(vote_existant)
-        else:
-            vote_existant.valeur = valeur
+    note = request.form.get("note", type=int)
+    if note is None or note < 0 or note > 4:
+        flash("Note invalide (0-4)", "danger")
+        return redirect(request.referrer or url_for("accueil"))
+    eval_existante = EvaluationArgument.query.filter_by(id_user=user_id, id_argument=id_argument).first()
+    if eval_existante:
+        eval_existante.note = note
     else:
-        nouveau_vote = VoteArgument(id_user=user_id, id_argument=id_argument, valeur=valeur)
-        db.session.add(nouveau_vote)
+        nouvelle_eval = EvaluationArgument(id_user=user_id, id_argument=id_argument, note=note)
+        db.session.add(nouvelle_eval)
     db.session.commit()
-    return "", 200
+    flash("Évaluation enregistrée", "success")
+    return redirect(request.referrer or url_for("debat", id_debat=Argument.query.get(id_argument).id_debat))
+
+@app.route("/favori_argument/<int:id_argument>", methods=["POST"])
+@login_required
+def basculer_favori_argument(id_argument):
+    user_id = session.get("user_id")
+    favori = FavoriArgument.query.filter_by(id_user=user_id, id_argument=id_argument).first()
+    if favori:
+        db.session.delete(favori)
+        flash("Retiré des favoris", "info")
+    else:
+        nouveau_favori = FavoriArgument(id_user=user_id, id_argument=id_argument)
+        db.session.add(nouveau_favori)
+        flash("Ajouté aux favoris", "success")
+    db.session.commit()
+    arg = Argument.query.get(id_argument)
+    return redirect(url_for("debat", id_debat=arg.id_debat))
+
+@app.route("/api/debat/<int:id_debat>/forces")
+@login_required
+def api_forces_bh(id_debat):
+    forces = calculer_forces_besnard_hunter(id_debat)
+    return jsonify(forces)
 
 @app.route("/debat/<int:id_debat>/supprimer", methods=["POST"])
+@login_required
 def supprimer_debat(id_debat):
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
     debat_obj = Debat.query.get_or_404(id_debat)
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     if user and (user.role in ['admin', 'prof'] or debat_obj.id_createur == user.iduser):
         db.session.delete(debat_obj)
         db.session.commit()
@@ -189,25 +224,23 @@ def supprimer_debat(id_debat):
     return redirect(url_for("accueil"))
 
 @app.route("/argument/<int:id_argument>/supprimer", methods=["POST"])
+@login_required
 def supprimer_argument(id_argument):
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
     arg = Argument.query.get_or_404(id_argument)
     id_debat = arg.id_debat
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     if user and (user.role in ['admin', 'prof'] or arg.id_auteur == user.iduser):
         db.session.delete(arg)
         db.session.commit()
         flash("Argument supprimé", "success")
+    else:
+        flash("Vous n'avez pas le droit de supprimer cet argument", "danger")
     return redirect(url_for("debat", id_debat=id_debat))
 
 @app.route("/ajouter_theme", methods=["POST"])
+@login_required
 def ajouter_theme():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("index"))
-    user = User.query.get(user_id)
+    user = User.query.get(session["user_id"])
     if user and user.role == 'admin':
         nom = request.form.get("nom_theme")
         if nom:
@@ -216,11 +249,6 @@ def ajouter_theme():
             db.session.commit()
             flash("Thème ajouté", "success")
     return redirect(url_for("accueil"))
-
-@app.route("/api/debat/<int:id_debat>/forces")
-def api_forces_bh(id_debat):
-    forces = calculer_forces_besnard_hunter(id_debat)
-    return jsonify(forces)
 
 @app.route("/logout")
 def logout():
