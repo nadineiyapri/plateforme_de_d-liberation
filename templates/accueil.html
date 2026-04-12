@@ -6,165 +6,341 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
-            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f4f6f9;
             padding: 30px 20px;
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* En-tête */
         .header {
-            background: rgba(255,255,255,0.95);
-            border-radius: 30px;
-            padding: 20px 30px;
+            background: white;
+            border-radius: 16px;
+            padding: 20px 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
         }
-        .user-info h2 { color: #b23c1c; font-size: 1.5rem; }
-        .user-info p { color: #6d4c41; }
+        .user-info h2 {
+            color: #1e293b;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .user-info p {
+            color: #475569;
+            margin-top: 4px;
+            font-size: 0.85rem;
+        }
         .btn {
             background: #c4452c;
             color: white;
-            padding: 10px 20px;
-            border-radius: 40px;
+            padding: 8px 18px;
+            border-radius: 30px;
             text-decoration: none;
-            font-weight: bold;
-            margin: 0 5px;
+            font-weight: 500;
+            margin: 0 4px;
             display: inline-block;
             transition: 0.2s;
             border: none;
             cursor: pointer;
+            font-size: 0.85rem;
         }
-        .btn:hover { background: #a3321c; transform: scale(1.02); }
-        .btn-danger { background: #7b3f2a; }
+        .btn:hover {
+            background: #a3321c;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+        }
+
+        /* Sections */
         .section-title {
-            font-size: 1.8rem;
-            color: #4e2e24;
-            margin: 30px 0 20px 0;
-            padding-left: 10px;
-            border-left: 6px solid #f06292;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 28px 0 18px 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
         }
+
+        /* Cartes des débats */
         .debat-card {
             background: white;
-            border-radius: 24px;
-            padding: 20px 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.08);
-            border-left: 8px solid;
+            border-radius: 12px;
+            padding: 18px 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            transition: box-shadow 0.2s;
         }
-        .debat-card.ouvert { border-left-color: #9b59b6; background: #fef9ff; }
-        .debat-card.ferme { border-left-color: #95a5a6; background: #f4f6f7; opacity: 0.85; }
-        .debat-titre { font-size: 1.4rem; font-weight: bold; color: #2c3e50; margin-bottom: 8px; }
-        .debat-meta { display: flex; flex-wrap: wrap; gap: 15px; margin: 12px 0; font-size: 0.85rem; color: #7f8c8d; }
-        .badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
-        .badge.violet { background: #9b59b6; color: white; }
-        .badge.gris { background: #95a5a6; color: white; }
-        .flex-actions { display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap; }
-        .theme-section { background: rgba(255,255,255,0.9); border-radius: 30px; padding: 25px; margin-top: 40px; }
-        .theme-section h3 { color: #b23c1c; margin-bottom: 15px; }
-        .theme-badge { background: white; border-radius: 50px; padding: 6px 14px; margin: 5px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .empty-msg { color: #4e2e24; text-align: center; padding: 40px; font-style: italic; background: rgba(255,255,255,0.7); border-radius: 30px; }
-        /* Menu déroulant trois points */
-        .dropdown { position: relative; display: inline-block; }
+        .debat-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .debat-card.ouvert {
+            border-left: 5px solid #8b5cf6;  /* violet */
+        }
+        .debat-card.ferme {
+            border-left: 5px solid #94a3b8;  /* gris */
+        }
+        .debat-titre {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .debat-titre a {
+            text-decoration: none;
+            color: #0f172a;
+        }
+        .debat-titre a:hover {
+            color: #c4452c;
+        }
+        .debat-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 12px 0;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .badge {
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .badge.violet {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+        .badge.gris {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .flex-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 14px;
+            align-items: center;
+        }
+        .btn-small {
+            background: #f1f5f9;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-decoration: none;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+        }
+        .btn-small:hover {
+            background: #e2e8f0;
+        }
+        .btn-danger {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fecaca;
+        }
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        /* Thèmes */
+        .theme-section {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 32px;
+            border: 1px solid #e2e8f0;
+        }
+        .theme-section h3 {
+            color: #0f172a;
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            font-weight: 600;
+        }
+        .theme-badge {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            padding: 6px 14px;
+            margin: 4px 6px 4px 0;
+            display: inline-block;
+            font-size: 0.8rem;
+            color: #334155;
+        }
+        hr {
+            margin: 20px 0;
+            border: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            background: #f8fafc;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Menu trois points */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
         .dropdown button {
             background: none;
-            font-size: 28px;
-            padding: 0 10px;
+            font-size: 22px;
+            padding: 0 8px;
             cursor: pointer;
             border: none;
-            color: #c4452c;
+            color: #475569;
         }
         .dropdown-content {
             display: none;
             position: absolute;
             right: 0;
             background-color: white;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border-radius: 12px;
-            z-index: 1;
+            z-index: 10;
+            border: 1px solid #e2e8f0;
         }
         .dropdown-content a {
-            color: #333;
-            padding: 12px 16px;
+            color: #1e293b;
+            padding: 10px 16px;
             text-decoration: none;
             display: block;
+            font-size: 0.85rem;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f5f9;
             border-radius: 12px;
         }
-        .dropdown-content a:hover { background-color: #f1f1f1; }
+
+        /* Modale */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            max-width: 480px;
+            margin: 20px;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.2);
+        }
+        .modal-content h2 {
+            color: #c4452c;
+            margin-bottom: 12px;
+            font-size: 1.4rem;
+        }
+        .modal-content p {
+            margin: 10px 0;
+            color: #334155;
+            line-height: 1.5;
+        }
+        .close-modal {
+            background: #c4452c;
+            color: white;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 12px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <div class="user-info">
-            <h2>🎤 {{ user.prenom }} {{ user.nom }} <span style="font-size:0.9rem;">({{ user.role }})</span></h2>
-            <p>Bienvenue sur UVoice – Exprimez-vous !</p>
+            <h2>{{ user.prenom }} {{ user.nom }} <span style="font-size:0.8rem; font-weight:normal;">({{ user.role }})</span></h2>
+            <p>Bienvenue sur UVoice</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <a href="{{ url_for('creer_debat') }}" class="btn">+ Nouveau débat</a>
-            <!-- Menu trois points -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="{{ url_for('creer_debat') }}" class="btn">Nouveau débat</a>
+            <button id="aboutBtn" class="btn btn-outline">À propos</button>
             <div class="dropdown">
                 <button>⋮</button>
                 <div class="dropdown-content">
-                    <a href="{{ url_for('logout') }}">🚪 Déconnexion</a>
+                    <a href="{{ url_for('logout') }}">Déconnexion</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- DÉBATS OUVERTS -->
-    <div class="section-title">🎯 Débats ouverts <span style="font-size:1rem;">(violet)</span></div>
+    <!-- Débats ouverts -->
+    <div class="section-title">Débats ouverts</div>
     {% if debats_ouverts %}
         {% for d in debats_ouverts %}
         <div class="debat-card ouvert">
-            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}" style="text-decoration:none; color:#2c3e50;">{{ d.titre }}</a></div>
+            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a></div>
             <div class="debat-meta">
-                <span>📅 {{ d.date_creation.strftime('%d/%m/%Y') }}</span>
-                <span>👍 Soutien: {{ d.nb_soutien }}</span>
-                <span>⚔️ Attaque: {{ d.nb_attaque }}</span>
-                <span>👤 {{ d.createur.prenom }} {{ d.createur.nom }}</span>
-                {% if d.date_limite %}<span>⏳ Limite: {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
+                <span>{{ d.date_creation.strftime('%d/%m/%Y') }}</span>
+                <span>Soutien: {{ d.nb_soutien }}</span>
+                <span>Attaque: {{ d.nb_attaque }}</span>
+                <span>par {{ d.createur.prenom }} {{ d.createur.nom }}</span>
+                {% if d.date_limite %}<span>Limite: {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
                 <span class="badge violet">Ouvert</span>
             </div>
             <p>{{ d.description[:120] }}...</p>
             <div class="flex-actions">
-                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn" style="background:#9b59b6;">Participer</a>
+                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn-small">Participer</a>
                 {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
                 <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                    <button type="submit" class="btn-small btn-danger">Supprimer</button>
                 </form>
                 {% endif %}
             </div>
         </div>
         {% endfor %}
     {% else %}
-        <div class="empty-msg">Aucun débat ouvert pour le moment. Lancez-en un !</div>
+        <div class="empty-msg">Aucun débat ouvert pour le moment.</div>
     {% endif %}
 
-    <!-- DÉBATS FERMÉS -->
-    <div class="section-title" style="margin-top: 50px;">🔒 Débats fermés <span style="font-size:1rem;">(gris)</span></div>
+    <!-- Débats fermés -->
+    <div class="section-title">Débats fermés</div>
     {% if debats_fermes %}
         {% for d in debats_fermes %}
         <div class="debat-card ferme">
-            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}" style="text-decoration:none; color:#2c3e50;">{{ d.titre }}</a></div>
+            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a></div>
             <div class="debat-meta">
-                <span>📅 {{ d.date_creation.strftime('%d/%m/%Y') }}</span>
-                <span>👍 Soutien: {{ d.nb_soutien }}</span>
-                <span>⚔️ Attaque: {{ d.nb_attaque }}</span>
-                <span>👤 {{ d.createur.prenom }} {{ d.createur.nom }}</span>
-                {% if d.date_limite %}<span>⏳ Fermé le {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
+                <span>{{ d.date_creation.strftime('%d/%m/%Y') }}</span>
+                <span>Soutien: {{ d.nb_soutien }}</span>
+                <span>Attaque: {{ d.nb_attaque }}</span>
+                <span>par {{ d.createur.prenom }} {{ d.createur.nom }}</span>
+                {% if d.date_limite %}<span>Fermé le {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
                 <span class="badge gris">Fermé</span>
             </div>
             <p>{{ d.description[:120] }}...</p>
             <div class="flex-actions">
-                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn" style="background:#7f8c8d;">Consulter (lecture seule)</a>
+                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn-small">Consulter</a>
                 {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
                 <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
-                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                    <button type="submit" class="btn-small btn-danger">Supprimer</button>
                 </form>
                 {% endif %}
             </div>
@@ -174,22 +350,39 @@
         <div class="empty-msg">Aucun débat fermé.</div>
     {% endif %}
 
-    <!-- THÈMES -->
+    <!-- Thèmes -->
     <div class="theme-section">
-        <h3>🏷️ Thèmes disponibles</h3>
+        <h3>Thèmes disponibles</h3>
         <div>{% for t in themes %}<span class="theme-badge">{{ t.nom_theme }}</span>{% endfor %}</div>
         {% if user.role == 'admin' %}
         <hr>
-        <form method="POST" action="{{ url_for('ajouter_theme') }}" style="display:flex; gap:10px; margin-top:15px;">
-            <input type="text" name="nom_theme" placeholder="Nouveau thème" style="flex:1; padding:10px; border-radius:60px; border:1px solid #f8bbd0;">
+        <form method="POST" action="{{ url_for('ajouter_theme') }}" style="display:flex; gap:10px; margin-top:16px;">
+            <input type="text" name="nom_theme" placeholder="Nouveau thème" style="flex:1; padding:8px 14px; border-radius:40px; border:1px solid #cbd5e1;">
             <button type="submit" class="btn">Ajouter</button>
         </form>
         {% endif %}
     </div>
 </div>
 
+<!-- Modale À propos -->
+<div id="aboutModal" class="modal">
+    <div class="modal-content">
+        <h2>À propos</h2>
+        <p><strong>U-Voice — Turn opinions into decisions.</strong></p>
+        <p>Nous sommes un groupe d'étudiants de <strong>Sorbonne Université (Jussieu)</strong>.<br>
+        Nous avons créé U-Voice pour rendre les débats plus simples, plus clairs et accessibles à tous.</p>
+        <p>Notre objectif est de permettre à chacun de s'exprimer, de confronter des idées et de participer à des décisions collectives dans un cadre structuré.</p>
+        <p><em>Parce que chaque voix compte.</em></p>
+        <hr>
+        <p><strong>Contact</strong><br>
+        contact@u-voice.fr<br>
+        Paris, France</p>
+        <button class="close-modal" id="closeAboutBtn">Fermer</button>
+    </div>
+</div>
+
 <script>
-    // Gestion du menu déroulant trois points
+    // Menu déroulant
     document.querySelectorAll('.dropdown button').forEach(btn => {
         btn.onclick = function(e) {
             var content = this.nextElementSibling;
@@ -199,6 +392,17 @@
     });
     window.onclick = function() {
         document.querySelectorAll('.dropdown-content').forEach(d => d.style.display = 'none');
+    };
+    // Modale
+    const modal = document.getElementById('aboutModal');
+    document.getElementById('aboutBtn').onclick = () => {
+        modal.style.display = 'flex';
+    };
+    document.getElementById('closeAboutBtn').onclick = () => {
+        modal.style.display = 'none';
+    };
+    window.onclick = (e) => {
+        if (e.target === modal) modal.style.display = 'none';
     };
 </script>
 </body>
