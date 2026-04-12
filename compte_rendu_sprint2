@@ -1,0 +1,24 @@
+Compte-rendu du Scrum Master – Sprint 2
+
+L’objectif principal de ce sprint était de rendre la plateforme plus stable et plus fiable, notamment dans les interactions des utilisateurs et la gestion du contenu.
+
+1. Système de vote et d’engagement
+
+Nous avons mis en place un système de likes et dislikes pour permettre aux utilisateurs d’exprimer leur avis sur les arguments.
+Pour éviter les abus, nous avons ajouté une règle : chaque utilisateur ne peut voter qu’une seule fois par contenu.
+Les votes ont aussi un effet direct sur le graphe, ce qui permet de visualiser rapidement les tendances et les opinions dominantes.
+
+2. Modération et gestion du contenu
+
+Nous avons ajouté la possibilité de supprimer des thèmes, des débats et des arguments. Cela donne aux administrateurs (et aux auteurs) un meilleur contrôle sur la plateforme.
+Nous avons également mis en place une clôture automatique des débats avec une date limite. Cela encourage les utilisateurs à participer avant la fin et permet de figer les résultats pour les analyser.
+
+3. Amélioration de l’expérience utilisateur
+
+Un bouton "À propos de nous" a été ajouté. Il permet aux utilisateurs de mieux comprendre le projet et son contexte, notamment son lien avec Sorbonne Université.
+
+Bilan
+
+Le sprint est réussi. Toutes les fonctionnalités importantes ont été développées.
+La plateforme est maintenant plus solide : on peut créer du contenu, voter, modérer et clôturer les débats.
+Nous sommes prêts à passer à une phase de tests avec davantage d’utilisateurs.
