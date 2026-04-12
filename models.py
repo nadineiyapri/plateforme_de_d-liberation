@@ -17,7 +17,8 @@ class User(db.Model):
     iduser = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String(100), nullable=False)
     prenom = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # admin / prof / etudiant
+    role = db.Column(db.String(20), nullable=False)
+    favoris = db.relationship('FavoriArgument', backref='user', cascade="all, delete-orphan")
 
 class Theme(db.Model):
     __tablename__ = 'themes'
@@ -46,22 +47,32 @@ class Argument(db.Model):
     __tablename__ = 'arguments'
     id_argument = db.Column(db.Integer, primary_key=True)
     texte = db.Column(db.Text, nullable=False)
-    type_arg = db.Column(db.String(20), nullable=False)
+    type_arg = db.Column(db.String(20), nullable=False)  # soutien / attaque
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
     id_debat = db.Column(db.Integer, db.ForeignKey('debats.id_debat'), nullable=False)
     id_auteur = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
     auteur = db.relationship('User')
     id_parent = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=True)
     enfants = db.relationship('Argument', backref=db.backref('parent', remote_side=[id_argument]), cascade="all, delete-orphan")
-    votes_recus = db.relationship('VoteArgument', backref='argument_concerne', cascade="all, delete-orphan")
+    evaluations = db.relationship('EvaluationArgument', backref='argument', cascade="all, delete-orphan")
+    favoris_recus = db.relationship('FavoriArgument', backref='argument', cascade="all, delete-orphan")
 
-class VoteArgument(db.Model):
-    __tablename__ = "votes_arguments"
-    id_vote_arg = db.Column(db.Integer, primary_key=True)
-    valeur = db.Column(db.Integer, nullable=False)
-    id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
-    id_argument = db.Column(db.Integer, db.ForeignKey("arguments.id_argument"), nullable=False)
-    __table_args__ = (db.UniqueConstraint("id_user", "id_argument", name="unique_vote_arg_per_user"),)
+class EvaluationArgument(db.Model):
+    __tablename__ = 'evaluations_argument'
+    id_evaluation = db.Column(db.Integer, primary_key=True)
+    note = db.Column(db.Integer, nullable=False)
+    id_user = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
+    id_argument = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=False)
+    date_evaluation = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('id_user', 'id_argument', name='unique_eval_per_user_per_arg'),)
+
+class FavoriArgument(db.Model):
+    __tablename__ = 'favoris_argument'
+    id_favori = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
+    id_argument = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=False)
+    date_ajout = db.Column(db.DateTime, default=datetime.utcnow)
+    __table_args__ = (db.UniqueConstraint('id_user', 'id_argument', name='unique_favori_arg_per_user'),)
 
 class Vote(db.Model):
     __tablename__ = "votes"
@@ -72,3 +83,12 @@ class Vote(db.Model):
     id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
     user = db.relationship("User")
     __table_args__ = (db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),)
+
+
+class VoteArgument(db.Model):
+    __tablename__ = "votes_arguments"
+    id_vote_arg = db.Column(db.Integer, primary_key=True)
+    valeur = db.Column(db.Integer, nullable=False)
+    id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
+    id_argument = db.Column(db.Integer, db.ForeignKey("arguments.id_argument"), nullable=False)
+    __table_args__ = (db.UniqueConstraint("id_user", "id_argument", name="unique_vote_arg_per_user"),)
