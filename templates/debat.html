@@ -5,95 +5,376 @@
     <title>UVoice - {{ debat.titre }}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
-        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #f48fb1 100%);
-            display: flex;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
         }
-        #graphe-container { width: 100vw; height: 100vh; position: relative; background: transparent; }
-        svg { width: 100%; height: 100%; display: block; }
-        
-        .link { fill: none; stroke-width: 3px; opacity: 0.6; transition: 0.2s; }
-        .link-soutien { stroke: #2ecc71; }
-        .link-attaque { stroke: #e74c3c; stroke-dasharray: 5,5; }
-        .link-root { stroke: #bdc3c7; }
-        
-        .node { cursor: pointer; transition: filter 0.2s; }
-        .node:hover { filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
-        .node rect { fill: white; stroke: #bdc3c7; stroke-width: 2px; rx: 10; ry: 10; transition: all 0.2s; }
-        .node-root rect { fill: #2c3e50; stroke: #2c3e50; }
-        .node text { font-size: 11px; fill: #2c3e50; pointer-events: none; text-anchor: middle; font-weight: 500; }
-        .node-root text { fill: white !important; font-weight: bold; font-size: 13px; }
-        .node .stats { font-size: 10px; fill: #7f8c8d; }
-        .node .badge-type { font-size: 9px; font-weight: bold; }
-        
+
+        #graphe-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Liens */
+        .link {
+            fill: none;
+            stroke-width: 2px;
+            opacity: 0.7;
+            transition: stroke-width 0.2s;
+        }
+        .link-soutien {
+            stroke: #2c7a4d;  /* vert sobre */
+        }
+        .link-attaque {
+            stroke: #c0392b;  /* rouge sobre */
+            stroke-dasharray: 5, 4;
+        }
+        .link-root {
+            stroke: #94a3b8;
+        }
+        .link:hover {
+            stroke-width: 3px;
+            opacity: 0.9;
+        }
+
+        /* Nœuds */
+        .node {
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .node:hover {
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.1));
+        }
+        .node rect {
+            fill: #ffffff;
+            stroke: #334155;
+            stroke-width: 1.2px;
+            rx: 4px;
+            ry: 4px;
+        }
+        .node-root rect {
+            fill: #f8fafc;
+            stroke: #475569;
+            stroke-width: 1.5px;
+        }
+        .node text {
+            font-size: 11px;
+            fill: #1e293b;
+            pointer-events: none;
+            text-anchor: middle;
+            font-weight: 500;
+        }
+        .node-root text {
+            font-weight: 600;
+            fill: #0f172a;
+        }
+        .node .stats {
+            font-size: 10px;
+            fill: #64748b;
+            font-weight: normal;
+        }
+        .node .badge-type {
+            font-size: 9px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .favori-star {
+            fill: #eab308;
+            font-size: 12px;
+        }
+
+        /* Panneau latéral */
         #panneau {
-            display: none; position: fixed; right: 20px; top: 20px; width: 350px; max-height: 90vh;
-            background: rgba(255,255,255,0.98); padding: 25px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            z-index: 1000; border: 1px solid #f8bbd0; overflow-y: auto; animation: slideIn 0.3s ease-out;
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            width: 360px;
+            max-height: calc(100% - 40px);
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
+            border: 1px solid #e2e8f0;
+            overflow-y: auto;
+            display: none;
         }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(100px); }
-            to { opacity: 1; transform: translateX(0); }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .vote-bar { display: flex; gap: 10px; margin: 15px 0; }
-        .btn-v { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.1s; }
-        .btn-like { background: #2ecc71; }
-        .btn-dislike { background: #e74c3c; }
-        .btn-v:active { transform: scale(0.97); }
-        textarea { width: 100%; height: 80px; border: 1px solid #f8bbd0; border-radius: 8px; padding: 10px; box-sizing: border-box; resize: vertical; margin-bottom: 10px; font-family: inherit; }
-        .btn-send { width: 100%; background: #c4452c; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .badge-clos { position: fixed; top: 80px; left: 20px; background: #e74c3c; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; z-index: 100; }
-        .controls { position: fixed; bottom: 20px; left: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 100; display: flex; gap: 10px; }
-        .controls button { background: #c4452c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .info-tooltip { position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; pointer-events: none; z-index: 1000; white-space: nowrap; }
-        .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 10px 20px; border-radius: 30px; font-size: 14px; z-index: 2000; animation: fadeOut 2s forwards; }
-        @keyframes fadeOut { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        .panel-header h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin: 0;
+        }
+        .close-panel {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+        .close-panel:hover {
+            color: #ef4444;
+        }
+
+        .panel-body {
+            padding: 20px;
+        }
+        .argument-metadata {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #334155;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .full-text {
+            background: #fefefe;
+            border-left: 3px solid #c4452c;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.45;
+            color: #1e293b;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+            border-left-width: 3px;
+        }
+
+        /* Évaluation */
+        .evaluation-section {
+            margin-bottom: 25px;
+        }
+        .star-rating {
+            display: flex;
+            gap: 6px;
+            margin: 12px 0;
+            justify-content: center;
+        }
+        .star-rating input {
+            display: none;
+        }
+        .star-rating label {
+            font-size: 22px;
+            cursor: pointer;
+            color: #cbd5e1;
+            transition: color 0.2s;
+        }
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label {
+            color: #f5b042;
+        }
+        .btn-eval {
+            background: #c4452c;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Réponse */
+        .reply-section {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #c4452c;
+        }
+        select {
+            width: 100%;
+            padding: 8px 14px;
+            border-radius: 30px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+        .btn-send {
+            background: #c4452c;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 30px;
+            font-weight: 500;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .debat-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            padding: 10px 18px;
+            border-radius: 40px;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .debat-info a {
+            text-decoration: none;
+            color: #c4452c;
+            font-size: 13px;
+        }
+        .debat-info h2 {
+            font-size: 1rem;
+            margin: 4px 0 2px;
+            color: #0f172a;
+        }
+        .debat-info .meta {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .badge-clos {
+            position: fixed;
+            top: 90px;
+            left: 20px;
+            background: #e74c3c;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 500;
+            z-index: 100;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e293b;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 12px;
+            z-index: 2000;
+            animation: fadeOut 2s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translateY(0); }
+            70% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-8px); visibility: hidden; }
+        }
+
+        hr {
+            margin: 18px 0;
+            border: 0;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        button, .favori-button {
+            background: none;
+            border: none;
+        }
+        .favori-button {
+            font-size: 20px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .favori-button.active {
+            color: #eab308;
+        }
+        .favori-button.inactive {
+            color: #cbd5e1;
+        }
+        #deleteArgBtn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
 <div id="graphe-container">
-    <div style="position:fixed; top:20px; left:20px; z-index:100; background: rgba(255,255,255,0.9); padding: 10px 15px; border-radius: 10px; backdrop-filter: blur(10px);">
-        <a href="{{ url_for('accueil') }}" style="text-decoration:none; color:#c4452c;">← Accueil</a>
-        <h2 style="margin:5px 0 0 0; font-size:18px;">{{ debat.titre }}</h2>
-        <div style="font-size:12px; color:#6d4c41;">
-            👤 {{ debat.createur.prenom }} {{ debat.createur.nom }} |
-            {% if debat.date_limite %} ⏰ Limite: {{ debat.date_limite.strftime('%d/%m/%Y') }}{% endif %}
-        </div>
+    <div class="debat-info">
+        <a href="{{ url_for('accueil') }}">← Accueil</a>
+        <h2>{{ debat.titre }}</h2>
+        <div class="meta">par {{ debat.createur.prenom }} {{ debat.createur.nom }} {% if debat.date_limite %} — Limite : {{ debat.date_limite.strftime('%d/%m/%Y') }}{% endif %}</div>
     </div>
-    {% if est_clos %}<div class="badge-clos">🔒 Débat Clos</div>{% endif %}
-    <div class="controls">
-        <button onclick="resetView()">🔄 Réinitialiser</button>
-        <button onclick="exportGraph()">📸 Exporter SVG</button>
-    </div>
+    {% if est_clos %}<div class="badge-clos">Débat clos</div>{% endif %}
     <svg id="graphe"></svg>
+
     <div id="panneau">
-        <div style="display: flex; justify-content: space-between;">
-            <h4 style="margin:0;">💬 Détails</h4>
-            <button onclick="document.getElementById('panneau').style.display='none'" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        <div class="panel-header">
+            <h4>Argument</h4>
+            <button class="close-panel" id="closePanelBtn">&times;</button>
         </div>
-        <div id="argument-metadata" style="font-size:12px; color:#7f8c8d; margin:10px 0;"></div>
-        <p id="full-text" style="background:#f8f9fa; padding:12px; border-radius:8px;"></p>
-        <div class="vote-bar" id="vote-controls" style="display:none;">
-            <button id="like-btn" class="btn-v btn-like">👍 Like</button>
-            <button id="dislike-btn" class="btn-v btn-dislike">👎 Dislike</button>
+        <div class="panel-body">
+            <div id="argument-metadata" class="argument-metadata"></div>
+            <div id="full-text" class="full-text"></div>
+
+            <div id="evaluation-section" class="evaluation-section">
+                <h4 style="font-size:0.9rem; margin-bottom:8px;">Pertinence (0 = faible, 4 = très persuasif)</h4>
+                <form method="POST" id="form-evaluation">
+                    <input type="hidden" name="id_argument" id="eval-arg-id">
+                    <div class="star-rating">
+                        <input type="radio" name="note" value="4" id="star4"><label for="star4">★</label>
+                        <input type="radio" name="note" value="3" id="star3"><label for="star3">★</label>
+                        <input type="radio" name="note" value="2" id="star2"><label for="star2">★</label>
+                        <input type="radio" name="note" value="1" id="star1"><label for="star1">★</label>
+                        <input type="radio" name="note" value="0" id="star0"><label for="star0">★</label>
+                    </div>
+                    <button type="submit" class="btn-eval">Évaluer</button>
+                </form>
+            </div>
+
+            <hr>
+
+            <div class="reply-section">
+                <h4 style="font-size:0.9rem; margin-bottom:8px;">Répondre à cet argument</h4>
+                <form method="POST" onsubmit="return validateForm(this)">
+                    <input type="hidden" name="id_parent" id="input-parent">
+                    <textarea name="texte" placeholder="Votre réponse..." required minlength="3"></textarea>
+                    <select name="type_arg">
+                        <option value="soutien">Soutien (lien vert)</option>
+                        <option value="attaque">Attaque (lien rouge)</option>
+                    </select>
+                    <button type="submit" class="btn-send">Publier</button>
+                </form>
+            </div>
         </div>
-        <hr>
-        {% if not est_clos %}
-        <h4>✏️ Répondre</h4>
-        <form method="POST" onsubmit="return validateForm(this)">
-            <input type="hidden" name="id_parent" id="input-parent">
-            <textarea name="texte" placeholder="Votre réponse..." required minlength="3"></textarea>
-            <select name="type_arg" style="width:100%; padding:10px; margin-bottom:15px;">
-                <option value="soutien" style="color:#2ecc71;">🌿 Soutien (lien vert)</option>
-                <option value="attaque" style="color:#e74c3c;">⚡ Attaque (lien rouge)</option>
-            </select>
-            <button type="submit" class="btn-send">Publier</button>
-        </form>
-        {% else %}
-        <div style="background:#f8f9fa; padding:15px; text-align:center; border-radius:8px;">🔒 Débat clos</div>
-        {% endif %}
     </div>
 </div>
 
@@ -103,50 +384,26 @@
     const svg = d3.select("#graphe");
     const container = document.getElementById('graphe-container');
     const width = container.clientWidth, height = container.clientHeight;
+
     const mainGroup = svg.append("g");
-    const zoomBehavior = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => mainGroup.attr("transform", event.transform));
+    const zoomBehavior = d3.zoom()
+        .scaleExtent([0.1, 3.5])
+        .on("zoom", (event) => mainGroup.attr("transform", event.transform));
     svg.call(zoomBehavior);
 
     let root = d3.hierarchy(treeData);
-    const treeLayout = d3.tree().nodeSize([140, 350]);
+    const treeLayout = d3.tree().nodeSize([140, 340]);
     treeLayout(root);
 
-    // Fonction pour afficher un petit message temporaire
     function showMessage(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
         toast.textContent = msg;
-        toast.style.background = isError ? '#e74c3c' : '#2ecc71';
+        toast.style.background = isError ? '#e74c3c' : '#2c7a4d';
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        setTimeout(() => toast.remove(), 2500);
     }
 
-    // Fonction de vote AJAX
-    async function vote(argumentId, valeur) {
-        try {
-            const response = await fetch(`/vote_argument/${argumentId}/${valeur}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            if (response.ok) {
-                showMessage(`Vote enregistré !`, false);
-                // Optionnel : recharger l'arbre ou mettre à jour le score localement
-                // Pour simplifier, on recharge la page ? Non, on va juste rafraîchir les forces via l'API
-                fetchForcesAndUpdate();
-            } else if (response.status === 404) {
-                showMessage(`Erreur 404 : la route n'existe pas. Vérifiez le serveur.`, true);
-            } else {
-                const text = await response.text();
-                showMessage(`Erreur : ${response.status}`, true);
-                console.error(text);
-            }
-        } catch (err) {
-            showMessage(`Erreur réseau : ${err.message}`, true);
-            console.error(err);
-        }
-    }
-
-    // Récupère les forces BH et met à jour l'arbre
     async function fetchForcesAndUpdate() {
         try {
             const resp = await fetch(`/api/debat/{{ debat.id_debat }}/forces`);
@@ -181,94 +438,148 @@
             .on("mouseleave", hideTooltip);
 
         newNodes.append("rect")
-            .attr("x", -110).attr("y", -40).attr("width", 220).attr("height", 80).attr("rx", 10)
-            .style("fill", d => {
-                if(d.data.id === "root") return "#2c3e50";
-                const force = d.data.force_bh || 0;
-                const intensite = Math.floor(force * 255);
-                return `rgb(${255 - intensite}, ${intensite}, 100)`;
-            });
+            .attr("x", -110).attr("y", -40).attr("width", 220).attr("height", 80).attr("rx", 4)
+            .style("fill", d => d.data.id === "root" ? "#f8fafc" : "#ffffff")
+            .style("stroke", "#334155")
+            .style("stroke-width", "1.2px");
 
         newNodes.append("text").attr("dy", -10)
-            .text(d => d.data.texte.length > 30 ? d.data.texte.substring(0,27)+"..." : d.data.texte);
-        newNodes.append("text").attr("class", "stats").attr("dy", 15)
-            .text(d => d.data.id === "root" ? "" : `Force BH: ${d.data.force_bh.toFixed(3)}`);
-        
-        newNodes.append("text").attr("class", "badge-type").attr("dy", 30).attr("x", 0)
+            .text(d => d.data.texte.length > 35 ? d.data.texte.substring(0,32)+"..." : d.data.texte);
+        newNodes.append("text").attr("class", "stats").attr("dy", 16)
+            .text(d => d.data.id === "root" ? "" : `Force BH: ${(d.data.force_bh || 0).toFixed(3)}`);
+        newNodes.append("text").attr("class", "badge-type").attr("dy", 28)
             .text(d => {
-                if(d.data.id === "root") return "🎯 DÉBAT";
-                return d.data.type === "soutien" ? "✓ SOUTIENT" : "⚡ ATTAQUE";
+                if(d.data.id === "root") return "DÉBAT";
+                return d.data.type === "soutien" ? "SOUTIENT" : "ATTAQUE";
             })
             .attr("fill", d => {
-                if(d.data.id === "root") return "white";
-                return d.data.type === "soutien" ? "#2ecc71" : "#e74c3c";
-            })
-            .attr("font-size", "9px").attr("font-weight", "bold");
-            
+                if(d.data.id === "root") return "#475569";
+                return d.data.type === "soutien" ? "#2c7a4d" : "#c0392b";
+            });
+        newNodes.append("text")
+            .attr("class", "favori-star")
+            .attr("dy", -22)
+            .attr("dx", 95)
+            .text(d => d.data.est_favori ? "★" : "")
+            .style("fill", "#eab308")
+            .style("font-size", "12px");
         nodes.merge(newNodes);
     }
 
+    let tooltip = null;
+    function showTooltip(event, d) {
+        if (!tooltip) {
+            tooltip = d3.select("body").append("div")
+                .style("position", "absolute")
+                .style("background", "#1e293b")
+                .style("color", "white")
+                .style("padding", "4px 10px")
+                .style("border-radius", "20px")
+                .style("font-size", "11px")
+                .style("pointer-events", "none")
+                .style("z-index", "1001");
+        }
+        tooltip.html(`Force BH: ${(d.data.force_bh || 0).toFixed(3)}<br>Type: ${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}`)
+            .style("left", (event.pageX + 12) + "px")
+            .style("top", (event.pageY - 20) + "px")
+            .style("opacity", 1);
+    }
+    function hideTooltip() { if (tooltip) tooltip.style("opacity", 0); }
+
     let currentArgumentId = null;
+    let currentEstFavori = false;
 
     function showDetails(d) {
         const isRoot = d.data.id === "root";
-        document.getElementById('full-text').innerHTML = d.data.texte;
-        const meta = document.getElementById('argument-metadata');
-        if(!isRoot) {
-            const typeColor = d.data.type === 'soutien' ? '#2ecc71' : '#e74c3c';
-            meta.innerHTML = `
-                👤 ${d.data.auteur}<br>
-                📅 ${d.data.date}<br>
-                🏷️ Type: <span style="color:${typeColor}; font-weight:bold;">${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}</span><br>
-                ⚖️ Force BH: ${d.data.force_bh}
-            `;
+        const metaDiv = document.getElementById('argument-metadata');
+        const fullTextDiv = document.getElementById('full-text');
+        const evalSection = document.getElementById('evaluation-section');
+        const evalForm = document.getElementById('form-evaluation');
+        const evalArgId = document.getElementById('eval-arg-id');
+        const parentInput = document.getElementById('input-parent');
+
+        fullTextDiv.innerText = d.data.texte;
+        parentInput.value = isRoot ? "root" : d.data.id;
+
+        if (!isRoot) {
             currentArgumentId = d.data.id;
-            document.getElementById('input-parent').value = d.data.id;
-            const voteDiv = document.getElementById('vote-controls');
-            voteDiv.style.display = 'flex';
+            currentEstFavori = d.data.est_favori;
+            let html = `
+                <p><strong>Auteur :</strong> ${d.data.auteur}</p>
+                <p><strong>Date :</strong> ${d.data.date}</p>
+                <p><strong>Type :</strong> <span style="color:${d.data.type === 'soutien' ? '#2c7a4d' : '#c0392b'}">${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}</span></p>
+                <p><strong>Force BH :</strong> ${(d.data.force_bh || 0).toFixed(3)}</p>
+                <div style="display: flex; align-items: center; margin-top: 8px;">
+                    <button id="favoriBtn" class="favori-button ${currentEstFavori ? 'active' : 'inactive'}">★</button>
+                    <span style="font-size:12px;">Argument favori (a changé mon avis)</span>
+                </div>
+            `;
+            if (d.data.peut_supprimer) {
+                html += `
+                    <div style="margin-top: 12px;">
+                        <button id="deleteArgBtn">Supprimer cet argument</button>
+                    </div>
+                `;
+            }
+            metaDiv.innerHTML = html;
+
+            evalSection.style.display = 'block';
+            evalArgId.value = d.data.id;
+            evalForm.action = `/evaluer_argument/${d.data.id}`;
+
+            const favBtn = document.getElementById('favoriBtn');
+            if (favBtn) {
+                favBtn.onclick = (e) => {
+                    e.preventDefault();
+                    fetch(`/favori_argument/${currentArgumentId}`, { method: 'POST' })
+                        .then(() => location.reload());
+                };
+            }
+            const delBtn = document.getElementById('deleteArgBtn');
+            if (delBtn) {
+                delBtn.onclick = (e) => {
+                    e.preventDefault();
+                    if (confirm("Êtes-vous sûr de vouloir supprimer cet argument ? Toutes ses réponses seront également supprimées.")) {
+                        fetch(`/argument/${d.data.id}/supprimer`, { method: 'POST' })
+                            .then(() => location.reload());
+                    }
+                };
+            }
         } else {
-            meta.innerHTML = '';
-            document.getElementById('input-parent').value = "root";
-            document.getElementById('vote-controls').style.display = 'none';
+            metaDiv.innerHTML = `<p>Point de départ du débat</p>`;
             currentArgumentId = null;
+            evalSection.style.display = 'none';
         }
         document.getElementById('panneau').style.display = 'block';
     }
 
-    // Gestion des clics sur les boutons Like / Dislike
-    document.getElementById('like-btn')?.addEventListener('click', () => {
-        if (currentArgumentId) vote(currentArgumentId, 1);
-        else showMessage("Aucun argument sélectionné", true);
+    function validateForm(form) {
+        if (form.texte.value.trim().length < 3) {
+            alert("Le texte doit contenir au moins 3 caractères.");
+            return false;
+        }
+        return true;
+    }
+
+    function initializeView() {
+        const init = d3.zoomIdentity.translate(200, height / 2).scale(0.7);
+        svg.call(zoomBehavior.transform, init);
+    }
+
+    document.getElementById('closePanelBtn').addEventListener('click', () => {
+        document.getElementById('panneau').style.display = 'none';
     });
-    document.getElementById('dislike-btn')?.addEventListener('click', () => {
-        if (currentArgumentId) vote(currentArgumentId, -1);
-        else showMessage("Aucun argument sélectionné", true);
+    svg.on("click", () => {
+        document.getElementById('panneau').style.display = 'none';
+        hideTooltip();
+    });
+    window.addEventListener('resize', () => {
+        svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+        updateGraph();
     });
 
-    let tooltip = null;
-    function showTooltip(event, d) {
-        if(!tooltip) tooltip = d3.select("body").append("div").attr("class","info-tooltip").style("opacity",0);
-        tooltip.html(`Force BH: ${d.data.force_bh}<br>Type: ${d.data.type === 'soutien' ? 'Soutien (vert)' : 'Attaque (rouge)'}`)
-            .style("left", (event.pageX+10)+"px").style("top", (event.pageY-10)+"px").style("opacity",1);
-    }
-    function hideTooltip() { if(tooltip) tooltip.style("opacity",0); }
-    function validateForm(form) { if(form.texte.value.trim().length<3) { alert("Minimum 3 caractères"); return false; } return true; }
-    function resetView() { const init = d3.zoomIdentity.translate(200, height/2).scale(0.7); svg.transition().duration(500).call(zoomBehavior.transform, init); }
-    function exportGraph() {
-        const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(document.getElementById('graphe'));
-        source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-        const link = document.createElement("a");
-        link.href = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
-        link.download = "graphe.svg";
-        link.click();
-    }
     updateGraph();
-    resetView();
-    svg.on("click", () => { document.getElementById('panneau').style.display='none'; hideTooltip(); });
-    window.addEventListener('resize', () => { svg.attr("width", container.clientWidth).attr("height", container.clientHeight); updateGraph(); });
-    
-    // Rafraîchissement périodique des forces
+    initializeView();
     setInterval(fetchForcesAndUpdate, 30000);
 </script>
 </body>
