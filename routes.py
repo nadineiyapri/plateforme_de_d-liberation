@@ -90,6 +90,7 @@ def construire_arbre(id_debat, user_id, user_role):
     def noeud(arg):
         force_bh = forces.get(arg.id_argument, 0.5)
         enfants = [e for e in tous_arguments if e.id_parent == arg.id_argument]
+        nb_enfants = len(enfants)
         peut_supprimer = (user_id == arg.id_auteur) or (user_role in ['admin', 'prof'])
         return {
             "id": arg.id_argument,
@@ -166,25 +167,44 @@ def accueil():
     """
     user = User.query.get(session["user_id"])
     maintenant = datetime.now()
-    tous_les_debats = Debat.query.all()
-    debats_ouverts = []
-    debats_fermes = []
-    for d in tous_les_debats:
+
+    themes = Theme.query.all()
+    debats = Debat.query.all()
+
+    ouverts_par_theme = {}
+    fermes_par_theme = {}
+
+    def init_theme_dict():
+        return {t.id_theme: {"theme": t, "debats": []} for t in themes}
+
+    ouverts_par_theme = init_theme_dict()
+    fermes_par_theme = init_theme_dict()
+
+    for d in debats:
         est_ferme = (d.statut != "ouvert") or (d.date_limite and maintenant > d.date_limite)
-        if not est_ferme:
-            debats_ouverts.append(d)
-        else:
-            debats_fermes.append(d)
-    debats_ouverts.sort(key=lambda d: d.date_creation, reverse=True)
-    debats_fermes.sort(key=lambda d: d.date_creation, reverse=True)
-    for d in tous_les_debats:
+
         d.nb_soutien = Argument.query.filter_by(id_debat=d.id_debat, type_arg='soutien').count()
         d.nb_attaque = Argument.query.filter_by(id_debat=d.id_debat, type_arg='attaque').count()
-    themes = Theme.query.all()
-    return render_template("accueil.html", user=user, debats_ouverts=debats_ouverts,
-    debats_fermes=debats_fermes, themes=themes, maintenant=maintenant)
 
+        if est_ferme:
+            fermes_par_theme[d.id_theme]["debats"].append(d)
+        else:
+            ouverts_par_theme[d.id_theme]["debats"].append(d)
 
+    return render_template(
+        "accueil.html",
+        user=user,
+        ouverts_par_theme=ouverts_par_theme,
+        fermes_par_theme=fermes_par_theme,
+        themes=themes
+    )
+
+    return render_template(
+        "accueil.html",
+        user=user,
+        themes_data=themes_data,
+        maintenant=maintenant
+    )
 # creer_debat
 @app.route("/creer_debat", methods=["GET", "POST"])
 @login_required
