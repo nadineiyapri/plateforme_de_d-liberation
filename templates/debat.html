@@ -171,22 +171,22 @@
         }
         .star-rating {
             display: flex;
-            gap: 6px;
-            margin: 12px 0;
+            flex-direction: row-reverse;
             justify-content: center;
+            gap: 4px;
         }
-        .star-rating input {
-            display: none;
-        }
+
+        .star-rating input { display: none; }
+
         .star-rating label {
             font-size: 22px;
             cursor: pointer;
             color: #cbd5e1;
-            transition: color 0.2s;
         }
-        .star-rating input:checked ~ label,
+
         .star-rating label:hover,
-        .star-rating label:hover ~ label {
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
             color: #f5b042;
         }
         .btn-eval {
@@ -421,13 +421,22 @@
     }
 
     function updateGraph() {
+        const childrenCount = {};
+        root.descendants().forEach(d => {
+            childrenCount[d.data.id] = d.children ? d.children.length : 0;
+        });
         const links = mainGroup.selectAll(".link").data(root.links());
         links.exit().remove();
         links.enter().append("path")
+            .style("stroke-width", d => {
+                const targetId = d.target.data.id;
+                const count = childrenCount[targetId] || 0;
+
+                return 1.5 + Math.sqrt(count);
+            })
             .attr("class", d => `link ${d.target.data.type === 'soutien' ? 'link-soutien' : d.target.data.type === 'attaque' ? 'link-attaque' : 'link-root'}`)
             .merge(links)
             .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
-
         const nodes = mainGroup.selectAll(".node").data(root.descendants());
         nodes.exit().remove();
         const newNodes = nodes.enter().append("g")
