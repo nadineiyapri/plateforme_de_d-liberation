@@ -3,8 +3,24 @@ from models import app, db, User, Theme, Debat, Argument, EvaluationArgument, Fa
 from datetime import datetime
 import functools
 
+#Calcul des forces des arguments selon Besnard et Hunter
 
 def calculer_forces_besnard_hunter(id_debat, max_iter=100, epsilon=1e-6):
+    """
+    Paramètres :
+        id_debat (int) : l'identifiant du débat dont on veut les forces.
+        max_iter (int) : nombre max d'itérations pour le calcul (par défaut 100).
+        epsilon (float) : seuil de précision pour arrêter le calcul.
+    Retour :
+        dict : { id_argument : force (float entre 0 et 1) }.
+    Logique :
+        - Récupère tous les arguments du débat.
+        - Pour chaque argument, calcule son poids initial w(a) = moyenne des notes (0-4) / 4.
+        - Identifie les attaquants (enfants de type 'attaque').
+        - Applique la formule v(a) = w(a) / (1 + somme des v(b) pour b attaquant a).
+        - Répète jusqu'à convergence (différence entre deux itérations très petite).
+        - Retourne un dictionnaire associant chaque argument à sa force calculée.
+    """
     arguments = Argument.query.filter_by(id_debat=id_debat).all()
     if not arguments:
         return {}
@@ -34,7 +50,23 @@ def calculer_forces_besnard_hunter(id_debat, max_iter=100, epsilon=1e-6):
             break
     return v
 
+
+#Construction de l'arbre d'arguments (pour D3.js)
 def construire_arbre(id_debat, user_id, user_role):
+    """
+    Paramètres :
+        id_debat (int) : l'identifiant du débat.
+        user_id (int) : l'id de l'utilisateur connecté.
+        user_role (str) : le rôle de l'utilisateur (admin, prof, etudiant).
+    Retour :
+        dict : un objet JSON représentant l'arbre des arguments (avec racine "root").
+    Logique :
+        - Récupère les forces via la fonction précédente.
+        - Récupère les favoris de l'utilisateur.
+        - Parcourt récursivement les arguments (ceux sans parent sont les racines).
+        - Pour chaque argument, crée un nœud avec : id, texte, type, force, auteur, date, est_favori, peut_supprimer (si l'utilisateur est admin/prof ou auteur).
+        - Retourne l'arbre complet.
+    """
     debat = Debat.query.get(id_debat)
     if not debat:
         return None
@@ -68,7 +100,13 @@ def construire_arbre(id_debat, user_id, user_role):
     }
 
 
+#Décorateur pour exiger la connexion
+
 def login_required(f):
+    """
+    Décorateur : avant d'exécuter la fonction f, vérifie que l'utilisateur est connecté.
+    Si pas connecté, affiche un message et redirige vers la page d'accueil (index).
+    """
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get("user_id"):
@@ -77,8 +115,16 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
+#Page d'accueil 
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """
+    GET : affiche le formulaire d'entrée (nom, prénom, rôle).
+    POST : crée un utilisateur s'il n'existe pas (via nom+prénom), le stocke en session,
+    puis redirige vers la page d'accueil des débats.
+    """
     if request.method == "POST":
         nom = request.form["nom"]
         prenom = request.form["prenom"]
@@ -92,9 +138,21 @@ def index():
         return redirect(url_for("accueil"))
     return render_template("index.html")
 
+
+#Page d'accueil des débats (liste des débats)
+
 @app.route("/accueil")
 @login_required
 def accueil():
+    """
+    Paramètres : aucun (mais nécessite d'être connecté).
+    Retour : template accueil.html avec la liste des débats séparés en ouverts/fermés.
+    Logique :
+        - Récupère l'utilisateur courant.
+        - Parcourt tous les débats, les trie en ouverts (non clos par date ou statut) et fermés.
+        - Pour chaque débat, calcule le nombre de soutiens et d'attaques.
+        - Affiche aussi les thèmes disponibles.
+    """
     user = User.query.get(session["user_id"])
     maintenant = datetime.now()
     tous_les_debats = Debat.query.all()
@@ -113,11 +171,18 @@ def accueil():
         d.nb_attaque = Argument.query.filter_by(id_debat=d.id_debat, type_arg='attaque').count()
     themes = Theme.query.all()
     return render_template("accueil.html", user=user, debats_ouverts=debats_ouverts,
-                           debats_fermes=debats_fermes, themes=themes, maintenant=maintenant)
+    debats_fermes=debats_fermes, themes=themes, maintenant=maintenant)
+
+
+#Création d'un nouveau débat
 
 @app.route("/creer_debat", methods=["GET", "POST"])
 @login_required
 def creer_debat():
+    """
+    GET : affiche le formulaire de création (titre, description, thème, date limite).
+    POST : enregistre le nouveau débat en base avec l'utilisateur courant comme créateur.
+    """
     user = User.query.get(session["user_id"])
     themes = Theme.query.all()
     if request.method == "POST":
@@ -142,9 +207,17 @@ def creer_debat():
         return redirect(url_for("accueil"))
     return render_template("creer_debat.html", user=user, themes=themes)
 
+
+#Page d'un débat (avec graphe D3)
+
 @app.route("/debat/<int:id_debat>", methods=["GET", "POST"])
 @login_required
 def debat(id_debat):
+    """
+    Paramètre : id_debat (int)
+    GET : affiche la page du débat avec le graphe interactif (arbre construit par construire_arbre).
+    POST : ajoute un nouvel argument (réponse) au débat, en lien avec le parent indiqué.
+    """
     user = User.query.get(session["user_id"])
     debat_obj = Debat.query.get_or_404(id_debat)
     maintenant = datetime.now()
@@ -162,7 +235,7 @@ def debat(id_debat):
             except ValueError:
                 pass
         arg = Argument(texte=texte, type_arg=type_arg, id_debat=id_debat,
-                       id_auteur=user.iduser, id_parent=actual_parent)
+        id_auteur=user.iduser, id_parent=actual_parent)
         db.session.add(arg)
         db.session.commit()
         flash("Argument ajouté", "success")
@@ -170,11 +243,19 @@ def debat(id_debat):
 
     arbre = construire_arbre(id_debat, user.iduser, user.role)
     return render_template("debat.html", user=user, debat=debat_obj,
-                           arbre=arbre, maintenant=maintenant, est_clos=est_ferme)
+    arbre=arbre, maintenant=maintenant, est_clos=est_ferme)
+
+
+#Évaluer un argument (note 0-4)
 
 @app.route("/evaluer_argument/<int:id_argument>", methods=["POST"])
 @login_required
 def evaluer_argument(id_argument):
+    """
+    Paramètre : id_argument (int)
+    Récupère la note (0-4) du formulaire, puis crée ou met à jour l'évaluation de l'utilisateur.
+    Redirige vers la page précédente (le débat).
+    """
     user_id = session.get("user_id")
     note = request.form.get("note", type=int)
     if note is None or note < 0 or note > 4:
@@ -190,9 +271,17 @@ def evaluer_argument(id_argument):
     flash("Évaluation enregistrée", "success")
     return redirect(request.referrer or url_for("debat", id_debat=Argument.query.get(id_argument).id_debat))
 
+
+#Ajouter ou retirer un argument des favoris
+
 @app.route("/favori_argument/<int:id_argument>", methods=["POST"])
 @login_required
 def basculer_favori_argument(id_argument):
+    """
+    Paramètre : id_argument (int)
+    Si l'utilisateur a déjà cet argument en favori, on le retire ; sinon on l'ajoute.
+    Redirige vers le débat correspondant.
+    """
     user_id = session.get("user_id")
     favori = FavoriArgument.query.filter_by(id_user=user_id, id_argument=id_argument).first()
     if favori:
@@ -206,15 +295,28 @@ def basculer_favori_argument(id_argument):
     arg = Argument.query.get(id_argument)
     return redirect(url_for("debat", id_debat=arg.id_debat))
 
+
+# API pour rafraîchir les forces (appel AJAX)
+
 @app.route("/api/debat/<int:id_debat>/forces")
 @login_required
 def api_forces_bh(id_debat):
+    """
+    Paramètre : id_debat (int)
+    Retourne un JSON { id_argument: force } pour le débat.
+    Utilisé par le front D3 pour mettre à jour les forces sans recharger la page.
+    """
     forces = calculer_forces_besnard_hunter(id_debat)
     return jsonify(forces)
 
+#Supprimer un débat
 @app.route("/debat/<int:id_debat>/supprimer", methods=["POST"])
 @login_required
 def supprimer_debat(id_debat):
+    """
+    Paramètre : id_debat (int)
+    Supprime le débat si l'utilisateur est admin, prof, ou créateur du débat.
+    """
     debat_obj = Debat.query.get_or_404(id_debat)
     user = User.query.get(session["user_id"])
     if user and (user.role in ['admin', 'prof'] or debat_obj.id_createur == user.iduser):
@@ -223,9 +325,16 @@ def supprimer_debat(id_debat):
         flash("Débat supprimé", "success")
     return redirect(url_for("accueil"))
 
+
+#Supprimer un argument
+
 @app.route("/argument/<int:id_argument>/supprimer", methods=["POST"])
 @login_required
 def supprimer_argument(id_argument):
+    """
+    Paramètre : id_argument (int)
+    Supprime l'argument si l'utilisateur est admin, prof, ou auteur de l'argument.
+    """
     arg = Argument.query.get_or_404(id_argument)
     id_debat = arg.id_debat
     user = User.query.get(session["user_id"])
@@ -237,9 +346,15 @@ def supprimer_argument(id_argument):
         flash("Vous n'avez pas le droit de supprimer cet argument", "danger")
     return redirect(url_for("debat", id_debat=id_debat))
 
+
+#Ajouter un thème (réservé aux admins)
 @app.route("/ajouter_theme", methods=["POST"])
 @login_required
 def ajouter_theme():
+    """
+    Seul un administrateur peut ajouter un thème.
+    Récupère le nom du thème depuis le formulaire et l'enregistre.
+    """
     user = User.query.get(session["user_id"])
     if user and user.role == 'admin':
         nom = request.form.get("nom_theme")
@@ -250,10 +365,14 @@ def ajouter_theme():
             flash("Thème ajouté", "success")
     return redirect(url_for("accueil"))
 
+#Déconnexion (vider la session)
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("index"))
+
+
+#Lancement de l'application
 
 if __name__ == "__main__":
     with app.app_context():
