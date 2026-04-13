@@ -293,63 +293,59 @@
         </div>
     </div>
 
-    <!-- Débats ouverts -->
-    <div class="section-title">Débats ouverts</div>
-    {% if debats_ouverts %}
-        {% for d in debats_ouverts %}
-        <div class="debat-card ouvert">
-            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a></div>
-            <div class="debat-meta">
-                <span>{{ d.date_creation.strftime('%d/%m/%Y') }}</span>
-                <span>Soutien: {{ d.nb_soutien }}</span>
-                <span>Attaque: {{ d.nb_attaque }}</span>
-                <span>par {{ d.createur.prenom }} {{ d.createur.nom }}</span>
-                {% if d.date_limite %}<span>Limite: {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
-                <span class="badge violet">Ouvert</span>
-            </div>
-            <p>{{ d.description[:120] }}...</p>
-            <div class="flex-actions">
-                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn-small">Participer</a>
-                {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
-                <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
-                    <button type="submit" class="btn-small btn-danger">Supprimer</button>
-                </form>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-msg">Aucun débat ouvert pour le moment.</div>
-    {% endif %}
+    <div class="section-title"> Débats ouverts</div>
 
-    <!-- Débats fermés -->
-    <div class="section-title">Débats fermés</div>
-    {% if debats_fermes %}
-        {% for d in debats_fermes %}
-        <div class="debat-card ferme">
-            <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a></div>
-            <div class="debat-meta">
-                <span>{{ d.date_creation.strftime('%d/%m/%Y') }}</span>
-                <span>Soutien: {{ d.nb_soutien }}</span>
-                <span>Attaque: {{ d.nb_attaque }}</span>
-                <span>par {{ d.createur.prenom }} {{ d.createur.nom }}</span>
-                {% if d.date_limite %}<span>Fermé le {{ d.date_limite.strftime('%d/%m/%Y') }}</span>{% endif %}
-                <span class="badge gris">Fermé</span>
+    {% for t in themes %}
+        {% set bloc = ouverts_par_theme[t.id_theme] %}
+
+        {% if bloc.debats %}
+            <h3 class="theme-badge">{{ t.nom_theme }}</h3>
+
+            {% for d in bloc.debats %}
+            <div class="debat-card ouvert">
+                <div class="debat-titre">
+                    <a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a>
+                </div>
+
+                <div class="debat-meta">
+                    <span>Soutien: {{ d.nb_soutien }}</span>
+                    <span>Attaque: {{ d.nb_attaque }}</span>
+                    <span class="badge violet">Ouvert</span>
+                </div>
+
+                <p>{{ d.description[:120] }}...</p>
             </div>
-            <p>{{ d.description[:120] }}...</p>
-            <div class="flex-actions">
-                <a href="{{ url_for('debat', id_debat=d.id_debat) }}" class="btn-small">Consulter</a>
-                {% if user.role in ['admin','prof'] or d.id_createur == user.iduser %}
-                <form method="POST" action="{{ url_for('supprimer_debat', id_debat=d.id_debat) }}" style="display:inline;">
-                    <button type="submit" class="btn-small btn-danger">Supprimer</button>
-                </form>
-                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+
+    <div class="section-title"> Débats fermés</div>
+
+    {% for t in themes %}
+        {% set bloc = fermes_par_theme[t.id_theme] %}
+
+        {% if bloc.debats %}
+            <h3 class="theme-badge">{{ t.nom_theme }}</h3>
+
+            {% for d in bloc.debats %}
+            <div class="debat-card ferme">
+                <div class="debat-titre">
+                    <a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a>
+                </div>
+
+                <div class="debat-meta">
+                    <span>Soutien: {{ d.nb_soutien }}</span>
+                    <span>Attaque: {{ d.nb_attaque }}</span>
+                    <span class="badge gris">Fermé</span>
+                </div>
+
+                <p>{{ d.description[:120] }}...</p>
             </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-msg">Aucun débat fermé.</div>
-    {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+
+
 
     <!-- Thèmes -->
     <div class="theme-section">
