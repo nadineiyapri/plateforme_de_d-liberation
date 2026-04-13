@@ -371,6 +371,35 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
+#Historique des activités de l'utilisateur connecté
+@app.route("/mon_historique")
+@login_required
+def mon_historique():
+    user = User.query.get(session["user_id"])
+    arguments = Argument.query.filter_by(id_auteur=user.iduser)\
+        .order_by(Argument.date_creation.desc()).all()
+    votes = Vote.query.filter_by(id_user=user.iduser)\
+        .order_by(Vote.date_creation.desc()).all()
+    activites = []
+    for arg in arguments:
+        activites.append({
+            "type": "argument",
+            "date": arg.date_creation,
+            "texte": arg.texte,
+            "type_arg": arg.type_arg,
+            "id_debat": arg.id_debat,
+            "titre_debat": arg.debat_backref.titre
+        })
+    for vote in votes:
+        activites.append({
+            "type": "vote",
+            "date": vote.date_creation,
+            "choix": vote.choix,
+            "id_debat": vote.id_debat,
+            "titre_debat": vote.debat_backref.titre
+        })
+    activites.sort(key=lambda x: x["date"], reverse=True)
+    return render_template("historique.html", user=user, activites=activites)
 
 #Lancement de l'application
 
