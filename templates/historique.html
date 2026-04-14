@@ -13,7 +13,6 @@
         .container { max-width: 800px; margin: 0 auto; }
         .header {
             background: white;
-            border-radius: 16px;
             padding: 20px 28px;
             display: flex;
             justify-content: space-between;
@@ -31,32 +30,20 @@
         }
         .activite {
             background: white;
-            border-radius: 12px;
             padding: 16px 20px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-            display: flex;
-            gap: 16px;
-            align-items: flex-start;
+            border-left: 4px solid #e2e8f0;
         }
-        .activite-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .icon-argument { background: #ede9fe; }
-        .icon-vote { background: #dcfce7; }
-        .activite-body { flex: 1; }
+        .activite.type-argument { border-left-color: #8b5cf6; }
+        .activite.type-vote     { border-left-color: #2c7a4d; }
+        .activite.type-evaluation { border-left-color: #f5b042; }
+        .activite.type-favori   { border-left-color: #eab308; }
+
         .activite-meta {
             font-size: 0.75rem;
             color: #94a3b8;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .activite-texte {
             font-size: 0.9rem;
@@ -73,23 +60,25 @@
         .badge {
             display: inline-block;
             padding: 2px 10px;
-            border-radius: 30px;
             font-size: 0.7rem;
             font-weight: 600;
             margin-right: 6px;
+            border: 1px solid currentColor;
         }
-        .badge-soutien { background: #dcfce7; color: #166534; }
-        .badge-attaque { background: #fee2e2; color: #991b1b; }
-        .badge-pour { background: #dcfce7; color: #166534; }
-        .badge-contre { background: #fee2e2; color: #991b1b; }
+        .badge-soutien { color: #166534; }
+        .badge-attaque { color: #991b1b; }
+        .badge-pour    { color: #166534; }
+        .badge-contre  { color: #991b1b; }
+        .badge-eval    { color: #92400e; }
+        .badge-favori  { color: #854d0e; }
         .empty {
             text-align: center;
             padding: 60px;
             color: #64748b;
             background: white;
-            border-radius: 16px;
             border: 1px solid #e2e8f0;
         }
+        .stars { color: #f5b042; font-size: 0.9rem; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -102,30 +91,37 @@
     <div class="timeline">
         {% if activites %}
             {% for a in activites %}
-            <div class="activite">
-                <div class="activite-icon {% if a.type == 'argument' %}icon-argument{% else %}icon-vote{% endif %}">
-                    {% if a.type == 'argument' %}💬{% else %}🗳️{% endif %}
-                </div>
-                <div class="activite-body">
-                    <div class="activite-meta">
-                        {{ a.date.strftime('%d/%m/%Y à %H:%M') }}
+            <div class="activite type-{{ a.type }}">
+                <div class="activite-meta">{{ a.date.strftime('%d/%m/%Y à %H:%M') }}</div>
+
+                {% if a.type == 'argument' %}
+                    <span class="badge badge-{{ a.type_arg }}">
+                        {{ 'Soutien' if a.type_arg == 'soutien' else 'Attaque' }}
+                    </span>
+                    <div class="activite-texte">
+                        {{ a.texte[:120] }}{% if a.texte|length > 120 %}...{% endif %}
                     </div>
-                    {% if a.type == 'argument' %}
-                        <span class="badge badge-{{ a.type_arg }}">
-                            {{ 'Soutien' if a.type_arg == 'soutien' else 'Attaque' }}
-                        </span>
-                        <div class="activite-texte">
-                            {{ a.texte[:120] }}{% if a.texte|length > 120 %}...{% endif %}
-                        </div>
-                    {% else %}
-                        <span class="badge badge-{{ a.choix }}">
-                            Vote : {{ a.choix|upper }}
-                        </span>
-                    {% endif %}
-                    <a href="{{ url_for('debat', id_debat=a.id_debat) }}" class="activite-lien">
-                        → {{ a.titre_debat }}
-                    </a>
-                </div>
+
+                {% elif a.type == 'vote' %}
+                    <span class="badge badge-{{ a.choix }}">Vote : {{ a.choix|upper }}</span>
+
+                {% elif a.type == 'evaluation' %}
+                    <span class="badge badge-eval">Évaluation</span>
+                    <span class="stars">{{ '★' * a.note }}{{ '☆' * (4 - a.note) }}</span>
+                    <div class="activite-texte">
+                        {{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}
+                    </div>
+
+                {% elif a.type == 'favori' %}
+                    <span class="badge badge-favori">★ Favori</span>
+                    <div class="activite-texte">
+                        {{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}
+                    </div>
+                {% endif %}
+
+                <a href="{{ url_for('debat', id_debat=a.id_debat) }}" class="activite-lien">
+                    → {{ a.titre_debat }}
+                </a>
             </div>
             {% endfor %}
         {% else %}

@@ -199,12 +199,6 @@ def accueil():
         themes=themes
     )
 
-    return render_template(
-        "accueil.html",
-        user=user,
-        themes_data=themes_data,
-        maintenant=maintenant
-    )
 # creer_debat
 @app.route("/creer_debat", methods=["GET", "POST"])
 @login_required
@@ -405,13 +399,17 @@ def logout():
 @login_required
 def mon_historique():
     """
-    Affiche l'historique de l'utilisateur connecté : tous les arguments qu'il a créés et tous les votes qu'il a émis.
+    Affiche l'historique de l'utilisateur connecté : arguments, votes, évaluations et favoris.
     Trie le tout par date décroissante.
     """
     user = User.query.get(session["user_id"])
     arguments = Argument.query.filter_by(id_auteur=user.iduser).order_by(Argument.date_creation.desc()).all()
     votes = Vote.query.filter_by(id_user=user.iduser).order_by(Vote.date_creation.desc()).all()
+    evaluations = EvaluationArgument.query.filter_by(id_user=user.iduser).order_by(EvaluationArgument.date_evaluation.desc()).all()
+    favoris = FavoriArgument.query.filter_by(id_user=user.iduser).order_by(FavoriArgument.date_ajout.desc()).all()
+
     activites = []
+
     for arg in arguments:
         activites.append({
             "type": "argument",
@@ -421,6 +419,7 @@ def mon_historique():
             "id_debat": arg.id_debat,
             "titre_debat": arg.debat_backref.titre
         })
+
     for vote in votes:
         activites.append({
             "type": "vote",
@@ -429,6 +428,30 @@ def mon_historique():
             "id_debat": vote.id_debat,
             "titre_debat": vote.debat_backref.titre
         })
+
+    for eval in evaluations:
+        arg = Argument.query.get(eval.id_argument)
+        if arg:
+            activites.append({
+                "type": "evaluation",
+                "date": eval.date_evaluation,
+                "note": eval.note,
+                "texte_arg": arg.texte,
+                "id_debat": arg.id_debat,
+                "titre_debat": arg.debat_backref.titre
+            })
+
+    for favori in favoris:
+        arg = Argument.query.get(favori.id_argument)
+        if arg:
+            activites.append({
+                "type": "favori",
+                "date": favori.date_ajout,
+                "texte_arg": arg.texte,
+                "id_debat": arg.id_debat,
+                "titre_debat": arg.debat_backref.titre
+            })
+
     activites.sort(key=lambda x: x["date"], reverse=True)
     return render_template("historique.html", user=user, activites=activites)
 
