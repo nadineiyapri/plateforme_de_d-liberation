@@ -1,5 +1,4 @@
 body {
-    /* Ton dégradé était un peu cassé, voici une version propre */
     background: repeating-linear-gradient(45deg, #fff, #fff 10px, #ffbd3a 10px, #ffbd3a 20px);
     margin: 0;
     padding: 0;
@@ -16,24 +15,24 @@ body {
     padding: 5px 10px;
     border-radius: 5px;
     text-decoration: none;
-    z-index: 100; /* Pour rester au dessus du graphe */
+    z-index: 100; 
 }
 
 h1 {
-    font-size: 50px; /* 100px c'est énorme, ça risque de cacher le graphe */
-    position: relative; /* Change absolute en relative pour ne pas écraser le graphe */
+    font-size: 50px; 
+    position: relative; 
     margin-top: 50px;
     width: 100%;
     text-align: center;
     color: brown;
 }
 
-/* CORRECTION ICI : Ajout du # et de la visibilité */
+
 #graphe-container {
     background-color: rgba(240, 240, 240, 0.9) !important; 
-    min-height: 80vh !important; /* Prend 80% de la hauteur de l'écran */
+    min-height: 80vh !important; 
     width: 100% !important;
-    border: 5px solid red !important; /* Gros bord rouge pour le test */
+    border: 5px solid red !important; 
     display: block !important;
     position: relative;
     z-index: 1;
