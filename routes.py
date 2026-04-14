@@ -456,6 +456,24 @@ def mon_historique():
     return render_template("historique.html", user=user, activites=activites)
 
 
+# supprimer_theme
+@app.route("/supprimer_theme/<int:id_theme>", methods=["POST"])
+@login_required
+def supprimer_theme(id_theme):
+    """
+    prend en parametres lid theme , permet de supprimer un theme ainsi que tous les debats reliés a celui ci
+    """
+    user = User.query.get(session["user_id"])
+    if user and user.role == 'admin':
+        theme = Theme.query.get_or_404(id_theme)
+        db.session.delete(theme)
+        db.session.commit()
+        flash("Thème supprimé", "success")
+    else:
+        flash("Vous n'avez pas les droits pour supprimer un thème", "danger")
+    return redirect(url_for("accueil"))
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
