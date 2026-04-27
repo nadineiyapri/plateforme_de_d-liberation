@@ -18,7 +18,6 @@ class User(db.Model):
     nom = db.Column(db.String(100), nullable=False)
     prenom = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(20), nullable=False)
-    favoris = db.relationship('FavoriArgument', backref='user', cascade="all, delete-orphan")
 
 class Theme(db.Model):
     __tablename__ = 'themes'
@@ -60,7 +59,7 @@ class Argument(db.Model):
 class EvaluationArgument(db.Model):
     __tablename__ = 'evaluations_argument'
     id_evaluation = db.Column(db.Integer, primary_key=True)
-    note = db.Column(db.Integer, nullable=False)
+    note = db.Column(db.Integer, nullable=False)  # 1 à 5
     id_user = db.Column(db.Integer, db.ForeignKey('users.iduser'), nullable=False)
     id_argument = db.Column(db.Integer, db.ForeignKey('arguments.id_argument'), nullable=False)
     date_evaluation = db.Column(db.DateTime, default=datetime.utcnow)
@@ -83,7 +82,6 @@ class Vote(db.Model):
     id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
     user = db.relationship("User")
     __table_args__ = (db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),)
-
 
 class VoteArgument(db.Model):
     __tablename__ = "votes_arguments"
