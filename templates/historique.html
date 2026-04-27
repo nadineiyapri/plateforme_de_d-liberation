@@ -5,79 +5,28 @@
     <title>Mon historique - UVoice</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: #f4f6f9;
-            padding: 30px 20px;
-        }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; padding: 30px 20px; }
         .container { max-width: 800px; margin: 0 auto; }
-        .header {
-            background: white;
-            padding: 20px 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
+        .header { background: white; padding: 20px 28px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border: 1px solid #e2e8f0; }
         .header h2 { color: #1e293b; font-size: 1.4rem; }
-        .btn-back {
-            text-decoration: none;
-            color: #c4452c;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .activite {
-            background: white;
-            padding: 16px 20px;
-            margin-bottom: 10px;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid #e2e8f0;
-        }
+        .btn-back { text-decoration: none; color: #c4452c; font-size: 0.9rem; }
+        .activite { background: white; padding: 16px 20px; margin-bottom: 10px; border: 1px solid #e2e8f0; border-left: 4px solid #e2e8f0; }
         .activite.type-argument { border-left-color: #8b5cf6; }
-        .activite.type-vote     { border-left-color: #2c7a4d; }
+        .activite.type-vote { border-left-color: #2c7a4d; }
         .activite.type-evaluation { border-left-color: #f5b042; }
-        .activite.type-favori   { border-left-color: #eab308; }
-
-        .activite-meta {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-        .activite-texte {
-            font-size: 0.9rem;
-            color: #1e293b;
-            margin-bottom: 6px;
-            line-height: 1.4;
-        }
-        .activite-lien {
-            font-size: 0.8rem;
-            color: #c4452c;
-            text-decoration: none;
-        }
+        .activite.type-favori { border-left-color: #eab308; }
+        .activite-meta { font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px; }
+        .activite-texte { font-size: 0.9rem; color: #1e293b; margin-bottom: 6px; line-height: 1.4; }
+        .activite-lien { font-size: 0.8rem; color: #c4452c; text-decoration: none; }
         .activite-lien:hover { text-decoration: underline; }
-        .badge {
-            display: inline-block;
-            padding: 2px 10px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            margin-right: 6px;
-            border: 1px solid currentColor;
-        }
+        .badge { display: inline-block; padding: 2px 10px; font-size: 0.7rem; font-weight: 600; margin-right: 6px; border: 1px solid currentColor; }
         .badge-soutien { color: #166534; }
         .badge-attaque { color: #991b1b; }
-        .badge-pour    { color: #166534; }
-        .badge-contre  { color: #991b1b; }
-        .badge-eval    { color: #92400e; }
-        .badge-favori  { color: #854d0e; }
-        .empty {
-            text-align: center;
-            padding: 60px;
-            color: #64748b;
-            background: white;
-            border: 1px solid #e2e8f0;
-        }
+        .badge-pour { color: #166534; }
+        .badge-contre { color: #991b1b; }
+        .badge-eval { color: #92400e; }
+        .badge-favori { color: #854d0e; }
+        .empty { text-align: center; padding: 60px; color: #64748b; background: white; border: 1px solid #e2e8f0; }
         .stars { color: #f5b042; font-size: 0.9rem; letter-spacing: 1px; }
     </style>
 </head>
@@ -85,43 +34,27 @@
 <div class="container">
     <div class="header">
         <h2>Mon historique</h2>
-        <a href="{{ url_for('accueil') }}" class="btn-back">← Retour à l'accueil</a>
+        <a href="{{ url_for('accueil') }}" class="btn-back">← Retour</a>
     </div>
-
     <div class="timeline">
         {% if activites %}
             {% for a in activites %}
             <div class="activite type-{{ a.type }}">
                 <div class="activite-meta">{{ a.date.strftime('%d/%m/%Y à %H:%M') }}</div>
-
                 {% if a.type == 'argument' %}
-                    <span class="badge badge-{{ a.type_arg }}">
-                        {{ 'Soutien' if a.type_arg == 'soutien' else 'Attaque' }}
-                    </span>
-                    <div class="activite-texte">
-                        {{ a.texte[:120] }}{% if a.texte|length > 120 %}...{% endif %}
-                    </div>
-
+                    <span class="badge badge-{{ a.type_arg }}">{{ 'Soutien' if a.type_arg == 'soutien' else 'Attaque' }}</span>
+                    <div class="activite-texte">{{ a.texte[:120] }}{% if a.texte|length > 120 %}...{% endif %}</div>
                 {% elif a.type == 'vote' %}
                     <span class="badge badge-{{ a.choix }}">Vote : {{ a.choix|upper }}</span>
-
                 {% elif a.type == 'evaluation' %}
                     <span class="badge badge-eval">Évaluation</span>
-                    <span class="stars">{{ '★' * a.note }}{{ '☆' * (4 - a.note) }}</span>
-                    <div class="activite-texte">
-                        {{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}
-                    </div>
-
+                    <span class="stars">{{ '★' * a.note }}{{ '☆' * (5 - a.note) }}</span>
+                    <div class="activite-texte">{{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}</div>
                 {% elif a.type == 'favori' %}
-                    <span class="badge badge-favori">★ Favori</span>
-                    <div class="activite-texte">
-                        {{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}
-                    </div>
+                    <span class="badge badge-favori">Favori</span>
+                    <div class="activite-texte">{{ a.texte_arg[:120] }}{% if a.texte_arg|length > 120 %}...{% endif %}</div>
                 {% endif %}
-
-                <a href="{{ url_for('debat', id_debat=a.id_debat) }}" class="activite-lien">
-                    → {{ a.titre_debat }}
-                </a>
+                <a href="{{ url_for('debat', id_debat=a.id_debat) }}" class="activite-lien">→ {{ a.titre_debat }}</a>
             </div>
             {% endfor %}
         {% else %}
