@@ -5,7 +5,7 @@
     <title>Créer un débat - UVoice</title>
     <style>
         body {
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             background: #f4f6f9;
             margin: 0;
             padding: 40px;
@@ -68,34 +68,37 @@
         a:hover {
             color: #c4452c;
         }
-        hr {
-            margin: 20px 0;
-            border: 0;
-            height: 1px;
-            background: #e2e8f0;
-        }
-        .info-note {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin-top: -12px;
-            margin-bottom: 12px;
+        .flash-message {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #fecaca;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>Nouveau débat</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="flash-message">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+    
     <form method="POST">
         <input type="text" name="titre" placeholder="Titre du débat" required>
         <textarea name="description" placeholder="Description (optionnelle)" rows="4"></textarea>
-        <select name="id_theme">
-            <option value="">Sans thème</option>
+        <select name="id_theme" required>
+            <option value="">-- Choisissez un thème --</option>
             {% for t in themes %}
             <option value="{{ t.id_theme }}">{{ t.nom_theme }}</option>
             {% endfor %}
         </select>
         <input type="datetime-local" name="date_limite">
-        <div class="info-note">Laissez vide pour pas de date limite.</div>
         <button type="submit">Créer le débat</button>
     </form>
     <a href="{{ url_for('accueil') }}">Retour à l'accueil</a>
