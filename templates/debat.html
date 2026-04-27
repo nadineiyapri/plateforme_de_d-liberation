@@ -110,7 +110,7 @@
     const zoomBehavior = d3.zoom().scaleExtent([0.1, 3.5]).on("zoom", (event) => mainGroup.attr("transform", event.transform));
     svg.call(zoomBehavior);
 
-    // ----- Définition des flèches (marqueurs) plus grands -----
+    //Définition des flèches (marqueurs) plus grands 
     const defs = svg.append("defs");
     
     // Flèche soutien
@@ -160,7 +160,7 @@
 
     // Augmenter l'espacement entre les nœuds pour bien voir les flèches
     let root = d3.hierarchy(treeData);
-    const treeLayout = d3.tree().nodeSize([180, 400]); // plus d'espace
+    const treeLayout = d3.tree().nodeSize([180, 400]); 
     treeLayout(root);
 
     function showMessage(msg, isError = false) {
