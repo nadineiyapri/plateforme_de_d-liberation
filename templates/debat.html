@@ -10,7 +10,7 @@
         #graphe-container { position: relative; width: 100%; height: 100%; background: #ffffff; }
         svg { width: 100%; height: 100%; display: block; }
         .link { fill: none; stroke-width: 2px; opacity: 0.7; }
-        .link-soutien { stroke: #2c7a4d; }
+        .link-soutien { stroke: #4f8f6a; }
         .link-attaque { stroke: #c0392b; stroke-dasharray: 5, 4; }
         .link-root { stroke: #94a3b8; }
         .node { cursor: pointer; transition: filter 0.2s; }
@@ -21,7 +21,7 @@
         .node-root text { font-weight: 600; fill: #0f172a; }
         .node .stats { font-size: 10px; fill: #64748b; }
         .node .badge-type { font-size: 9px; font-weight: 600; letter-spacing: 0.3px; }
-        .favori-star { fill: #eab308; font-size: 12px; }
+        .favori-heart { fill: #ff0000; font-size: 12px; font-weight: bold; pointer-events: none;}
         #panneau { position: fixed; right: 20px; top: 20px; width: 360px; max-height: calc(100% - 40px); background: white; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); z-index: 1000; border: 1px solid #e2e8f0; overflow-y: auto; display: none; }
         .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
         .panel-header h4 { font-size: 1rem; font-weight: 600; color: #0f172a; }
@@ -31,7 +31,7 @@
         .argument-metadata { background: #f8fafc; padding: 12px 16px; border-radius: 12px; font-size: 12px; color: #334155; margin-bottom: 20px; border: 1px solid #e2e8f0; }
         .full-text { background: #fefefe; border-left: 3px solid #c4452c; padding: 14px; border-radius: 8px; font-size: 13px; line-height: 1.45; color: #1e293b; margin-bottom: 20px; border: 1px solid #e2e8f0; }
         .evaluation-section { margin-bottom: 25px; }
-        .star-rating { display: flex; gap: 6px; margin: 12px 0; justify-content: center; }
+        .star-rating { display: flex ; flex-direction: row-reverse; gap: 6px; margin: 12px 0; justify-content: center; }
         .star-rating input { display: none; }
         .star-rating label { font-size: 24px; cursor: pointer; color: #cbd5e1; transition: color 0.2s; }
         .star-rating input:checked ~ label, .star-rating label:hover, .star-rating label:hover ~ label { color: #f5b042; }
@@ -51,6 +51,32 @@
     </style>
 </head>
 <body>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+      {% for category, message in messages %}
+        <div class="toast-message" style="
+            min-width: 250px;
+            background-color: {% if category == 'success' %}#166534{% elif category == 'danger' %}#b91c1c{% else %}#1e293b{% endif %};
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-family: sans-serif;
+            animation: slideIn 0.3s ease-out;">
+        {{ message }}
+    </div>{% endfor %}
+</div>{% endif %}
+{% endwith %}
+
+<style>
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+</style>
+
 <div id="graphe-container">
     <div class="debat-info">
         <a href="{{ url_for('accueil') }}">← Accueil</a>
@@ -65,6 +91,7 @@
         <div class="panel-body">
             <div id="argument-metadata" class="argument-metadata"></div>
             <div id="full-text" class="full-text"></div>
+
             <div id="evaluation-section" class="evaluation-section">
                 <h4 style="font-size:0.9rem;">Pertinence (1 = pas pertinent, 5 = très pertinent)</h4>
                 <form id="form-evaluation" method="POST">
@@ -117,7 +144,7 @@
     defs.append("marker")
         .attr("id", "arrow-soutien")
         .attr("viewBox", "0 0 10 10")
-        .attr("refX", 22)   // plus grand pour dépasser du nœud
+        .attr("refX", 22)   
         .attr("refY", 5)
         .attr("markerWidth", 10)
         .attr("markerHeight", 10)
@@ -221,8 +248,8 @@
         newNodes.append("text").attr("class", "badge-type").attr("dy", 28)
             .text(d => d.data.id === "root" ? "DÉBAT" : (d.data.type === "soutien" ? "SOUTIENT" : "ATTAQUE"))
             .attr("fill", d => d.data.id === "root" ? "#475569" : (d.data.type === "soutien" ? "#2c7a4d" : "#c0392b"));
-        newNodes.append("text").attr("class", "favori-star").attr("dy", -22).attr("dx", 95)
-            .text(d => d.data.est_favori ? "★" : "").style("fill", "#eab308").style("font-size", "12px");
+        newNodes.append("text").attr("class", "favori-heart").attr("dy", -22).attr("dx", 95)
+            .text(d => d.data.est_favori ? "♥" : "").style("fill", "#FF0000").style("font-size", "12px");
         nodes.merge(newNodes);
     }
 
@@ -233,7 +260,6 @@
     }
     function hideTooltip() { if(tooltip) tooltip.style("opacity",0); }
 
-    let currentArgumentId = null;
     function showDetails(d) {
         const isRoot = d.data.id === "root";
         const metaDiv = document.getElementById('argument-metadata');
@@ -242,17 +268,50 @@
         const evalForm = document.getElementById('form-evaluation');
         const evalArgId = document.getElementById('eval-arg-id');
         const parentInput = document.getElementById('input-parent');
+        
         fullTextDiv.innerText = d.data.texte;
         parentInput.value = isRoot ? "root" : d.data.id;
+        
         if (!isRoot) {
             currentArgumentId = d.data.id;
-            metaDiv.innerHTML = `<p><strong>Auteur :</strong> ${d.data.auteur}</p><p><strong>Date :</strong> ${d.data.date}</p><p><strong>Type :</strong> <span style="color:${d.data.type === 'soutien' ? '#2c7a4d' : '#c0392b'}">${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}</span></p><p><strong>Force BH :</strong> ${(d.data.force_bh || 0).toFixed(3)}</p><div style="margin-top:8px;"><button id="favoriBtn" style="background:none; border:none; font-size:20px; cursor:pointer;">${d.data.est_favori ? '★' : '☆'}</button> <span style="font-size:12px;">Argument favori (a changé mon avis)</span></div>`;
-            if (d.data.peut_supprimer) metaDiv.innerHTML += `<div style="margin-top:12px;"><button id="deleteArgBtn" style="background:#e74c3c; color:white; border:none; padding:5px 14px; border-radius:30px; cursor:pointer;">Supprimer</button></div>`;
+            const heartColor = d.data.est_favori ? '#e74c3c' : '#bdc3c7';
+            const heartIcon = d.data.est_favori ? '♥' : '♡';
+            metaDiv.innerHTML = `
+                <p><strong>Auteur :</strong> ${d.data.auteur}</p>
+                <p><strong>Date :</strong> ${d.data.date}</p>
+                <p><strong>Type :</strong> <span style="color:${d.data.type === 'soutien' ? '#2c7a4d' : '#c0392b'}">${d.data.type === 'soutien' ? 'Soutien' : 'Attaque'}</span></p>
+                <p><strong>Force BH :</strong> ${(d.data.force_bh || 0).toFixed(3)}</p>
+                <div style="margin-top:8px;">
+                    <button id="favoriBtn" style="background:none; border:none; font-size:25px; cursor:pointer; color:${heartColor}; transition: transform 0.2s;">
+                        ${heartIcon}
+                    </button> 
+                    <span style="font-size:12px; color: #7f8c8d;">Coup de cœur</span>
+                </div>`;
+
+            if (d.data.peut_supprimer) {
+                metaDiv.innerHTML += `<div style="margin-top:12px;"><button id="deleteArgBtn" style="background:#e74c3c; color:white; border:none; padding:5px 14px; border-radius:30px; cursor:pointer;">Supprimer</button></div>`;
+            }
+
             evalSection.style.display = 'block';
             evalArgId.value = d.data.id;
             evalForm.action = `/evaluer_argument/${d.data.id}`;
-            document.getElementById('favoriBtn').onclick = () => { fetch(`/favori_argument/${d.data.id}`, {method:'POST'}).then(()=>location.reload()); };
-            if(document.getElementById('deleteArgBtn')) document.getElementById('deleteArgBtn').onclick = () => { if(confirm("Supprimer cet argument ?")) fetch(`/argument/${d.data.id}/supprimer`,{method:'POST'}).then(()=>location.reload()); };
+
+            document.getElementById('favoriBtn').onclick = () => { 
+                window.location.href = `/favori_argument/${d.data.id}`;
+            };
+
+            if (document.getElementById('deleteArgBtn')) {
+                document.getElementById('deleteArgBtn').onclick = () => { 
+                    if (confirm("Supprimer cet argument ?")) {
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `/argument/${d.data.id}/supprimer`;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                };
+            }
+
             // Charger histogramme et note utilisateur
             fetch(`/api/argument/${d.data.id}/stats`).then(r=>r.json()).then(stats=>{
                 const container = document.getElementById('histogramme');
@@ -279,11 +338,10 @@
         }
         document.getElementById('panneau').style.display = 'block';
     }
-
     function validateForm(form) { if(form.texte.value.trim().length<3){ alert("Minimum 3 caractères"); return false; } return true; }
     function chargerResultat() {
         fetch(`/api/debat/{{ debat.id_debat }}/resultat`).then(r=>r.json()).then(data=>{
-            document.getElementById('resultat-debat').innerHTML = `🏆 ${data.gagnant} l'emporte (${data.pour} vs ${data.contre})`;
+            document.getElementById('resultat-debat').innerHTML = ` ${data.gagnant} l'emporte (${data.pour} vs ${data.contre})`;
         });
     }
     function initializeView() { const init = d3.zoomIdentity.translate(300, height/2).scale(0.6); svg.call(zoomBehavior.transform, init); }
@@ -292,6 +350,8 @@
     window.addEventListener('resize', () => { svg.attr("width", container.clientWidth).attr("height", container.clientHeight); updateGraph(); });
     updateGraph(); initializeView(); chargerResultat();
     setInterval(() => { fetchForcesAndUpdate(); chargerResultat(); }, 30000);
+
+    
 </script>
 </body>
 </html>
