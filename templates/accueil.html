@@ -84,7 +84,7 @@
                 <div class="theme-header"><h3>{{ theme_data.theme.nom_theme }}</h3></div>
                 {% for d in theme_data.debats %}
                 <div class="debat-card ouvert">
-                    <div class="debat-titre"><a href="{{ url_for('debat', id_debat=d.id_debat) }}">{{ d.titre }}</a></div>
+                    <div class="debat-titre">{{ d.titre }}</a></div>
                     <div class="debat-meta">
                         <span>{{ d.date_creation.strftime('%d/%m/%Y') }}</span>
                         <span>Soutien: {{ d.nb_soutien }}</span>
