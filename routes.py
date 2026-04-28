@@ -429,7 +429,7 @@ def evaluer_argument(id_argument):
 
 # AJOUT / RETRAIT D’UN ARGUMENT DANS LES FAVORIS
 
-@app.route("/favori_argument/<int:id_argument>", methods=["POST"])
+@app.route("/favori_argument/<int:id_argument>", methods=["GET","POST"])
 @login_required
 def basculer_favori_argument(id_argument):
     """
@@ -682,61 +682,86 @@ def mon_historique():
     """
     user = User.query.get(session["user_id"])
 
-    # Récupération des différentes activités
-    arguments = Argument.query.filter_by(id_auteur=user.iduser).order_by(Argument.date_creation.desc()).all()
-    votes = Vote.query.filter_by(id_user=user.iduser).order_by(Vote.date_creation.desc()).all()
-    evaluations = EvaluationArgument.query.filter_by(id_user=user.iduser).order_by(EvaluationArgument.date_evaluation.desc()).all()
-    favoris = FavoriArgument.query.filter_by(id_user=user.iduser).order_by(FavoriArgument.date_ajout.desc()).all()
+    # Récupération des Créations (Thèmes et Débats)
+    mes_themes = Theme.query.filter_by(id_admin=user.iduser).all()
+    mes_debats_crees = Debat.query.filter_by(id_createur=user.iduser).all()
+
+    # Récupération des autres activités
+    arguments = Argument.query.filter_by(id_auteur=user.iduser).all()
+    evaluations = EvaluationArgument.query.filter_by(id_user=user.iduser).all()
+    favoris = FavoriArgument.query.filter_by(id_user=user.iduser).all()
 
     activites = []
 
+    # Ajouter les Thèmes créés
+    for t in mes_themes:
+        activites.append({
+            "type": "theme",
+            "date": datetime.utcnow(), # Ou ajoute un champ date_creation à ton modèle Theme
+            "id_debat": None,
+            "titre_debat": t.nom_theme
+        })
+
+    # Ajouter les Débats créés
+    for d in mes_debats_crees:
+        activites.append({
+            "type": "debat",
+            "date": d.date_creation,
+            "id_debat": d.id_debat,
+            "titre_debat": d.titre
+        })
+
+    # Ajouter tes Arguments avec Statistiques
     for arg in arguments:
+        # Calcul simple des stats pour l'affichage
+        nb_favs = len(arg.favoris_recus)
+        notes = [e.note for e in arg.evaluations]
+        moyenne = sum(notes) / len(notes) if notes else 0
+        
         activites.append({
             "type": "argument",
             "date": arg.date_creation,
             "texte": arg.texte,
             "type_arg": arg.type_arg,
             "id_debat": arg.id_debat,
-            "titre_debat": arg.debat_backref.titre
+            "titre_debat": arg.debat_backref.titre,
+            "nb_favoris": nb_favs,
+            "moyenne_eval": round(moyenne, 1),
+            "nb_votes": len(notes),
+            "force_bh": getattr(arg, 'force_bh', 0) # Si tu as le champ, sinon 0
         })
 
-    for vote in votes:
-        activites.append({
-            "type": "vote",
-            "date": vote.date_creation,
-            "choix": vote.choix,
-            "id_debat": vote.id_debat,
-            "titre_debat": vote.debat_backref.titre
-        })
-
-    for eval in evaluations:
-        arg = Argument.query.get(eval.id_argument)
-        if arg:
+    # Ajouter les Évaluations que tu as données
+    for ev in evaluations:
+        arg_cible = Argument.query.get(ev.id_argument)
+        if arg_cible:
             activites.append({
                 "type": "evaluation",
-                "date": eval.date_evaluation,
-                "note": eval.note,
-                "texte_arg": arg.texte,
-                "id_debat": arg.id_debat,
-                "titre_debat": arg.debat_backref.titre
+                "date": ev.date_evaluation,
+                "note": ev.note,
+                "texte_arg": arg_cible.texte,
+                "id_debat": arg_cible.id_debat,
+                "titre_debat": arg_cible.debat_backref.titre,
+                "auteur_prenom": arg_cible.auteur.prenom,
+                "auteur_nom": arg_cible.auteur.nom
             })
 
+    # Ajouter les Favoris que tu as mis
     for fav in favoris:
-        arg = Argument.query.get(fav.id_argument)
-        if arg:
+        arg_cible = Argument.query.get(fav.id_argument)
+        if arg_cible:
             activites.append({
                 "type": "favori",
                 "date": fav.date_ajout,
-                "texte_arg": arg.texte,
-                "id_debat": arg.id_debat,
-                "titre_debat": arg.debat_backref.titre
+                "texte_arg": arg_cible.texte,
+                "id_debat": arg_cible.id_debat,
+                "titre_debat": arg_cible.debat_backref.titre,
+                "auteur_prenom": arg_cible.auteur.prenom,
+                "auteur_nom": arg_cible.auteur.nom
             })
 
-    # Tri par date (la plus récente en premier)
     activites.sort(key=lambda x: x["date"], reverse=True)
     return render_template("historique.html", user=user, activites=activites)
-
-
 
 # MODIFICATION DE LA DESCRIPTION D’UN DÉBAT (auteur ou admin)
 
