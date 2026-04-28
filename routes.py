@@ -594,16 +594,23 @@ def supprimer_argument(id_argument):
 @login_required
 def ajouter_theme():
     """
-    Ajoute un nouveau thème. Seuls les administrateurs peuvent le faire.
+    Ajoute un nouveau thème. Seuls les administrateurs peuvent le faire. Verifie si il n'y a pas de doublons
     """
     user = User.query.get(session["user_id"])
     if user and user.role == 'admin':
-        nom = request.form.get("nom_theme")
+        nom = request.form.get("nom_theme", "").strip()
+        
         if nom:
-            nouveau_theme = Theme(nom_theme=nom, id_admin=user.iduser)
-            db.session.add(nouveau_theme)
-            db.session.commit()
-            flash("Thème ajouté", "success")
+            existant = Theme.query.filter(Theme.nom_theme.ilike(nom)).first()
+            
+            if existant:
+                flash(f"Le thème '{nom}' existe déjà.", "warning")
+            else:
+                nouveau_theme = Theme(nom_theme=nom, id_admin=user.iduser)
+                db.session.add(nouveau_theme)
+                db.session.commit()
+                flash("Thème ajouté", "success")
+                
     return redirect(url_for("accueil"))
 
 
