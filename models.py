@@ -73,6 +73,16 @@ class FavoriArgument(db.Model):
     date_ajout = db.Column(db.DateTime, default=datetime.utcnow)
     __table_args__ = (db.UniqueConstraint('id_user', 'id_argument', name='unique_favori_arg_per_user'),)
 
+class Vote(db.Model):
+    __tablename__ = "votes"
+    id_vote = db.Column(db.Integer, primary_key=True)
+    choix = db.Column(db.String(10), nullable=False)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    id_debat = db.Column(db.Integer, db.ForeignKey("debats.id_debat"), nullable=False)
+    id_user = db.Column(db.Integer, db.ForeignKey("users.iduser"), nullable=False)
+    user = db.relationship("User")
+    __table_args__ = (db.UniqueConstraint("id_debat", "id_user", name="unique_vote_per_user_per_debat"),)
+
 class VoteArgument(db.Model):
     __tablename__ = "votes_arguments"
     id_vote_arg = db.Column(db.Integer, primary_key=True)

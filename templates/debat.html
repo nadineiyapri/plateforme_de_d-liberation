@@ -144,7 +144,7 @@
     defs.append("marker")
         .attr("id", "arrow-soutien")
         .attr("viewBox", "0 0 10 10")
-        .attr("refX", 22)   
+        .attr("refX", 22)   // plus grand pour dépasser du nœud
         .attr("refY", 5)
         .attr("markerWidth", 10)
         .attr("markerHeight", 10)
@@ -287,6 +287,7 @@
                     </button> 
                     <span style="font-size:12px; color: #7f8c8d;">Coup de cœur</span>
                 </div>`;
+            // --------------------------
 
             if (d.data.peut_supprimer) {
                 metaDiv.innerHTML += `<div style="margin-top:12px;"><button id="deleteArgBtn" style="background:#e74c3c; color:white; border:none; padding:5px 14px; border-radius:30px; cursor:pointer;">Supprimer</button></div>`;
@@ -341,7 +342,7 @@
     function validateForm(form) { if(form.texte.value.trim().length<3){ alert("Minimum 3 caractères"); return false; } return true; }
     function chargerResultat() {
         fetch(`/api/debat/{{ debat.id_debat }}/resultat`).then(r=>r.json()).then(data=>{
-            document.getElementById('resultat-debat').innerHTML = ` ${data.gagnant} l'emporte (${data.pour} vs ${data.contre})`;
+            document.getElementById('resultat-debat').innerHTML = `🏆 ${data.gagnant} l'emporte (${data.pour} vs ${data.contre})`;
         });
     }
     function initializeView() { const init = d3.zoomIdentity.translate(300, height/2).scale(0.6); svg.call(zoomBehavior.transform, init); }
