@@ -302,34 +302,43 @@ def creer_debat():
     themes = Theme.query.all()
 
     if request.method == "POST":
-        titre = request.form.get("titre")
-        description = request.form.get("description")
+        titre = request.form.get("titre", "").strip()
+        description = request.form.get("description", "").strip()
         id_theme = request.form.get("id_theme")
         date_str = request.form.get("date_limite")
+
+        # Vérifier si le titre existe déjà dans ce thème
+        if titre and id_theme:
+            existant = Debat.query.filter(
+                Debat.titre.ilike(titre), 
+                Debat.id_theme == int(id_theme)
+            ).first()
+            
+            if existant:
+                flash(f"Le débat '{titre}' existe déjà dans ce thème.", "warning")
+                return render_template("creer_debat.html", user=user, themes=themes)
+
+        # Gestion de la date
         dt_limite = None
-
-        # On refuse la création si aucun thème n’a été choisi
-        if not id_theme or id_theme == "":
-            flash("Veuillez sélectionner un thème pour votre débat", "danger")
-            return redirect(url_for("creer_debat"))
-
         if date_str:
             try:
                 dt_limite = datetime.strptime(date_str, '%Y-%m-%dT%H:%M')
             except ValueError:
-                pass   # Si la date n’est pas au bon format, on ignore
+                pass
 
         nouveau_debat = Debat(
-            titre=titre, description=description,
+            titre=titre, 
+            description=description,
             id_theme=int(id_theme),
-            id_createur=user.iduser, date_limite=dt_limite, statut="ouvert"
+            id_createur=user.iduser, 
+            date_limite=dt_limite, 
+            statut="ouvert"
         )
         db.session.add(nouveau_debat)
         db.session.commit()
-        flash("Débat créé", "success")
-        return redirect(url_for("accueil"))
+        flash("Débat créé !", "success")
+        return redirect(url_for("debat", id_debat=nouveau_debat.id_debat))
     return render_template("creer_debat.html", user=user, themes=themes)
-
 
 
 # PAGE D’UN DÉBAT (graphe interactif + ajout d’arguments)
@@ -347,16 +356,29 @@ def debat(id_debat):
     debat_obj = Debat.query.get_or_404(id_debat)
     maintenant = datetime.now()
 
-    # Déterminer si le débat est fermé (plus possible d’ajouter des arguments)
     est_clos = (debat_obj.statut != "ouvert") or (debat_obj.date_limite and maintenant > debat_obj.date_limite)
 
     if request.method == "POST" and not est_clos:
-        texte = request.form.get("texte")
+        texte = request.form.get("texte", "").strip()
         type_arg = request.form.get("type_arg")
         id_parent_raw = request.form.get("id_parent")
-        parent_id = None
 
-        # "root" signifie qu’on répond directement à la racine (pas de parent)
+        if not texte:
+            flash("L'argument ne peut pas être vide.", "danger")
+            return redirect(url_for("debat", id_debat=id_debat))
+
+        # On regarde si cet argument exact existe déjà DANS CE DÉBAT
+        doublon = Argument.query.filter(
+            Argument.id_debat == id_debat,
+            Argument.texte.ilike(texte)
+        ).first()
+
+        if doublon:
+            flash("Cet argument a déjà été proposé dans ce débat.", "warning")
+            return redirect(url_for("debat", id_debat=id_debat))
+
+        # Gestion du parent
+        parent_id = None
         if id_parent_raw and id_parent_raw not in ["", "None", "root"]:
             try:
                 parent_id = int(id_parent_raw)
@@ -373,7 +395,6 @@ def debat(id_debat):
     arbre = construire_arbre(id_debat, user.iduser, user.role)
     return render_template("debat.html", user=user, debat=debat_obj,
                            arbre=arbre, maintenant=maintenant, est_clos=est_clos)
-
 
 
 # ÉVALUATION D’UN ARGUMENT (note 1-5 étoiles)
