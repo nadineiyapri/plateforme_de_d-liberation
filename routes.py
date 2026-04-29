@@ -12,41 +12,10 @@ def calculer_forces_avec_soutiens(id_debat, max_iter=100, epsilon=1e-6):
     Calcule la force de chaque argument d’un débat en prenant en compte
     les soutiens (qui aident) et les attaques (qui affaiblissent).
 
-    PARAMÈTRES:
-        id_debat (int) : l’identifiant du débat
-        max_iter (int) : nombre maximum d’itérations pour stabiliser le calcul
-        (par défaut 100). Plus il est grand, plus le calcul
-        est précis mais plus il prend du temps.
-        epsilon (float) : seuil de précision. Quand les forces changent de
-        moins de epsilon entre deux itérations, on s’arrête.
+    Prend en paramètre id_debat, max_iter (nombre maximum d’itérations pour stabiliser le calcul, par defaut 100),
+    epsilon (float) : seuil de précision.
 
-    RETOURNE:
-        dict : { id_argument (int) : force (float entre 0 et 1) }
-
-    LOGIQUE DÉTAILLÉE:
-        1. On récupère tous les arguments du débat depuis la base de données.
-        2. Pour chaque argument, on calcule son “poids initial” w(a) à partir
-           des notes (1 à 5 étoiles) que les utilisateurs lui ont attribuées.
-           - La moyenne des notes est transformée en nombre entre 0 et 1 avec
-             la formule: (moyenne - 1) / 4. Ainsi, 1 donne 0, 5 donne 1.
-           - Si personne n’a noté l’argument, on prend 0.5 (neutre).
-        3. On construit deux dictionnaires:
-           - soutiens[a] : liste des arguments qui soutiennent a
-           - attaquants[a] : liste des arguments qui attaquent a
-           Ces relations sont déterminées par le champ “type_arg” (soutien/attaque)
-           et le lien “id_parent” (l’enfant soutient ou attaque son parent).
-        4. On initialise toutes les forces à 0.5 (valeur de départ neutre).
-        5. On répète le calcul max_iter fois ou jusqu’à convergence:
-           - Pour chaque argument, on additionne les forces de ses soutiens
-             et celles de ses attaquants (en prenant les valeurs de l’itération
-             précédente).
-           - On applique la formule:
-               v(a) = (w(a) + somme_des_soutiens) / (1 + somme_des_soutiens + somme_des_attaques)
-           - Cette formule garantit que le résultat est toujours entre 0 et 1.
-           - On calcule la plus grande différence entre l’ancienne et la nouvelle
-             force (pour savoir si le calcul a convergé).
-        6. Si la plus grande différence est plus petite que epsilon, on arrête
-           (le système est stable). Sinon, on continue.
+    Retourne un dictionnaire dont les clés sont id_argument (int) et les valeurs force (float entre 0 et 1).
     """
     # récupération des arguments
     arguments = Argument.query.filter_by(id_debat=id_debat).all()
@@ -118,35 +87,11 @@ def construire_arbre(id_debat, user_id, user_role):
     Fabrique un arbre JSON (utilisable par la bibliothèque D3.js) à partir
     de tous les arguments d’un débat.
 
-    PARAMÈTRES:
-        id_debat (int) : l’identifiant du débat
-        user_id (int) : l’identifiant de l’utilisateur connecté (pour savoir
-                        quels arguments il a mis en favori)
-        user_role (str) : son rôle (admin, prof, etudiant). Cela sert à déterminer
-                         s’il a le droit de supprimer un argument.
+    Prend en paramètre id_debat (int), user_id (int), et user_role (str).
 
-    RETOURNE:
-        dict : un arbre JSON avec une racine nommée "root". Chaque nœud contient:
-            - id (int) : identifiant unique de l’argument
-            - texte (str) : le contenu de l’argument
-            - type (str) : "soutien" ou "attaque"
-            - force_bh (float) : force calculée par la fonction ci-dessus
-            - auteur (str) : prénom et nom de la personne qui a posté l’argument
-            - date (str) : date de création formatée
-            - est_favori (bool) : True si l’utilisateur connecté a mis une étoile
-            - peut_supprimer (bool) : True si l’utilisateur a le droit de supprimer
-            - children (list) : liste des arguments qui répondent directement à celui-ci
-
-    LOGIQUE DÉTAILLÉE:
-        - On récupère le débat. S’il n’existe pas, on retourne None.
-        - On calcule les forces de tous les arguments du débat.
-        - On récupère la liste des favoris de l’utilisateur (sous forme d’ensemble d’IDs).
-        - On définit une fonction récursive “noeud” qui transforme un argument
-          en dictionnaire. Les “enfants” sont les arguments dont le “id_parent”
-          vaut l’ID de l’argument courant.
-        - Les arguments “racines” sont ceux qui n’ont pas de parent (id_parent = None).
-        - On retourne un dictionnaire racine spécial (root) avec le titre du débat
-          et la liste des racines comme enfants.
+    Retourne un arbre JSON avec une racine nommée "root".
+    Chaque nœud contient: id (int), texte (str), type (str), force_bh (float), auteur (str), date (str), est_favori (bool),
+    peut_supprimer (bool), et children (list).
     """
     debat = Debat.query.get(id_debat)
     if not debat:
@@ -206,7 +151,7 @@ def login_required(f):
     session contient la clé "user_id").
 
     Si l’utilisateur n’est pas connecté:
-        - On affiche un message flash "Veuillez vous identifier"
+        - On affiche un message "Veuillez vous identifier"
         - On le redirige vers la page d’accueil ("/")
     """
     @functools.wraps(f)
@@ -256,8 +201,8 @@ def accueil():
     """
     Page d’accueil après connexion.
     Affiche les débats regroupés par thème, séparés en deux sections:
-        - Débats ouverts (couleur violette)
-        - Débats fermés (couleur grise)
+        - Débats ouverts (violet)
+        - Débats fermés (gris)
     Calcule aussi pour chaque débat le nombre de soutiens et d’attaques.
     """
     user = User.query.get(session["user_id"])
@@ -432,10 +377,8 @@ def evaluer_argument(id_argument):
 @app.route("/favori_argument/<int:id_argument>", methods=["GET","POST"])
 @login_required
 def basculer_favori_argument(id_argument):
-    """
-    Ajoute ou retire un argument des favoris de l’utilisateur.
-    Un favori signifie que cet argument a changé son avis.
-    """
+    """Ajoute ou retire un argument des favoris de l’utilisateur."""
+
     user_id = session.get("user_id")
     favori = FavoriArgument.query.filter_by(id_user=user_id, id_argument=id_argument).first()
 
@@ -474,11 +417,8 @@ def api_forces_bh(id_debat):
 def api_stats_argument(id_argument):
     """
     API qui renvoie les statistiques des évaluations (notes 1-5) pour un argument.
-    Retourne un JSON avec:
-        - stats : nombre de notes pour chaque valeur (1 à 5)
-        - total : nombre total d’évaluations
-        - moyenne : note moyenne (sur 5)
-        - note_utilisateur : note donnée par l’utilisateur connecté (ou None)
+    Retourne un JSON avec: stats (nombre de notes pour chaque valeur (1 à 5)), total (nombre total d’évaluations),
+    moyenne (note moyenne (sur 5)), et note_utilisateur (note donnée par l’utilisateur connecté (ou None)).
     """
     arg = Argument.query.get_or_404(id_argument)
     evaluations = EvaluationArgument.query.filter_by(id_argument=id_argument).all()
@@ -511,10 +451,7 @@ def api_stats_argument(id_argument):
 def api_resultat_debat(id_debat):
     """
     API qui calcule quel camp (POUR ou CONTRE) a gagné le débat.
-    Prend en compte:
-        - La force BH des arguments racines (ceux sans parent)
-        - Le nombre de favoris (un argument qui a changé beaucoup d’avis
-          voit son poids augmenté)
+    Prend en compte la force BH des arguments racines et le nombre de favoris.
     Retourne un JSON avec:
         - pour : score du camp "pour"
         - contre : score du camp "contre"
@@ -559,9 +496,8 @@ def api_resultat_debat(id_debat):
 @login_required
 def supprimer_debat(id_debat):
     """
-    Supprime un débat et tout son contenu (arguments, évaluations, favoris…).
-    - Seul le créateur du débat ou un administrateur peut le faire.
-    - Les autres utilisateurs voient un message d’erreur.
+    Supprime un débat et tout son contenu. Seul le créateur du débat ou un administrateur
+    peut le faire (les autres utilisateurs voient un message d’erreur).
     """
     debat_obj = Debat.query.get_or_404(id_debat)
     user = User.query.get(session["user_id"])
@@ -588,8 +524,7 @@ def supprimer_debat(id_debat):
 def supprimer_argument(id_argument):
     """
     Supprime un argument (et tous ses enfants, car la relation en base de données
-    est configurée avec "cascade").
-    - Seul l’auteur de l’argument ou un administrateur peut le faire.
+    est configurée avec "cascade"). Seul l’auteur de l’argument ou un administrateur peut le faire.
     """
     arg = Argument.query.get_or_404(id_argument)
     id_debat = arg.id_debat
@@ -673,11 +608,8 @@ def logout():
 @login_required
 def mon_historique():
     """
-    Affiche l’historique complet de l’utilisateur connecté :
-        - arguments qu’il a créés
-        - votes (pour/contre) qu’il a émis sur les débats
-        - évaluations (notes 1-5) qu’il a données
-        - arguments qu’il a mis en favori
+    Affiche l’historique complet de l’utilisateur connecté : arguments qu’il a créés, votes (pour/contre) qu’il a émis sur les débats,
+    évaluations (notes 1-5) qu’il a données, arguments qu’il a mis en favori.
     Le tout est trié du plus récent au plus ancien.
     """
     user = User.query.get(session["user_id"])

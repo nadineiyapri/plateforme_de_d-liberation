@@ -13,15 +13,6 @@ Menasria AbdelDjallil.
 U-Voice est une application web permettant la création et la gestion de débats structurés sous forme d’arbre d’arguments, avec système de vote et décision finale formelle.
 
 
-## Membres du groupe
-
-- Do Cécilia  
-- OuldLhadj Narimane  
-- Tuyishime Cedrick  
-- Sekher Nadine  
-- Menasria AbdelDjallil  
-
-
 ##  Objectif du projet
 
 - La création de thèmes de discussion
@@ -149,7 +140,7 @@ python routes.py
  
 
 
-##Technologies utilisées
+## Technologies utilisées
 
 -Python
 -Flask
@@ -158,7 +149,7 @@ python routes.py
 -Jinja2
 -D3.js
 
-##État du projet
+## État du projet
 
 Application fonctionnelle comprenant :
  Gestion complète des débats
