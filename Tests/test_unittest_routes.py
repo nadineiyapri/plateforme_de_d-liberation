@@ -1,5 +1,5 @@
-#afin de lancer les unittest, excecuter la commande suivante dans le terminal
-#python3 -m unittest discover -s tests
+#afin de lancer les unittest, executer la commande suivante dans le terminal :
+# python3 -m unittest discover -s tests
 import unittest
 from routes import app, db 
 from models import User, Theme, Debat, Argument, EvaluationArgument, FavoriArgument
