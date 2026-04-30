@@ -1,4 +1,4 @@
-#afin d'excecuter les fonctins pytest, lancer la commande "pytest" dans le terminal 
+#afin d'executer les fonctions pytest, lancer la commande "pytest" dans le terminal 
 import pytest
 from routes import app, db
 from models import User, Theme, Debat, Argument
